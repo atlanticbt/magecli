@@ -62,6 +62,8 @@ magecli inventory status SKU123 --json
 | `attribute view/options/sets` | Product attributes |
 | `inventory status` | Stock status |
 | `store views/config/groups/websites` | Store configuration |
+| `config list/get/dump` | System configuration |
+| `promo catalog-rule/cart-rule/coupon list/view` | Promotions & coupons |
 | `cms page list/view`, `cms block list/view` | CMS content |
 | `api` | Raw REST API escape hatch (read-only by default) |
 
@@ -119,10 +121,10 @@ magecli product list --json --template '...'         # Go template
 
 ## AI Agent Integration
 
-Install as a skill for Claude Code or Codex:
+Install the magecli skill for Claude Code or Codex:
 
 ```bash
-npx skills add ./skills/magecli -g -y
+npx skills add atlanticbt/magecli
 ```
 
 ## License

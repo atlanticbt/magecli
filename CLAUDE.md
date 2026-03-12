@@ -125,4 +125,9 @@ Config: `.goreleaser.yml`. Version, commit, and date are injected via ldflags in
 
 ## Skills (AI Agent Docs)
 
+Install as a skill from the public repo:
+```bash
+npx skills add atlanticbt/magecli
+```
+
 The `skills/magecli/` directory is the **source of truth** for AI agent documentation. Run `make sync-skills` to copy to `.claude/skills/` and `.codex/skills/`. Run `make check-skills` to verify they're in sync. Always edit `skills/` first, then sync.
