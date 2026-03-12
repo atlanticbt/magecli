@@ -1,6 +1,14 @@
 # magecli
 
+[![CI](https://github.com/atlanticbt/magecli/actions/workflows/ci.yml/badge.svg)](https://github.com/atlanticbt/magecli/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/atlanticbt/magecli)](https://goreportcard.com/report/github.com/atlanticbt/magecli)
+[![Go Reference](https://pkg.go.dev/badge/github.com/atlanticbt/magecli.svg)](https://pkg.go.dev/github.com/atlanticbt/magecli)
+[![Release](https://img.shields.io/github/v/release/atlanticbt/magecli)](https://github.com/atlanticbt/magecli/releases/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A CLI tool for querying Magento 2 stores via the REST API. Built for AI agents (Claude Code, Codex) and developers.
+
+**[Documentation](https://atlanticbt.github.io/magecli/)**
 
 ## Install
 
