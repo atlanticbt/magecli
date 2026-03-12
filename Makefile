@@ -22,7 +22,7 @@ LDFLAGS := -s -w \
 	-X github.com/atlanticbt/magecli/internal/build.commitFromLdflags=$(COMMIT) \
 	-X github.com/atlanticbt/magecli/internal/build.dateFromLdflags=$(BUILD_DATE)
 
-.PHONY: build fmt lint test tidy clean sync-skills check-skills
+.PHONY: build fmt lint test tidy clean sync-skills check-skills verify vulncheck
 
 build: $(BIN_DIR)/magecli
 
@@ -54,6 +54,12 @@ test:
 
 tidy:
 	$(GO) mod tidy
+
+verify:
+	$(GO) mod verify
+
+vulncheck:
+	$(GO) run golang.org/x/vuln/cmd/govulncheck@latest ./...
 
 clean:
 	rm -rf $(BIN_DIR) dist/
