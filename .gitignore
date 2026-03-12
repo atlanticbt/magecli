@@ -1,0 +1,29 @@
+# Compiled binaries
+bin/
+/magecli
+*.exe
+
+# Go build/test artifacts
+*.test
+*.out
+cover.out
+coverage.html
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE / local tool config
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.claude/settings.local.json
+
+# Planning docs
+PLAN.md
+
+# Environment / secrets
+.env
+.env.*
