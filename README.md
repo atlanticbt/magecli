@@ -8,7 +8,7 @@
 
 A CLI tool for querying Magento 2 stores via the REST API. Built for AI agents (Claude Code, Codex) and developers.
 
-**[Documentation](https://atlanticbt.github.io/magecli/)**
+**Full documentation, examples, and AI agent integration guide:** https://atlanticbt.github.io/magecli/
 
 ## Install
 
