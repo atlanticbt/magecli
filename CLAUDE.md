@@ -4,11 +4,19 @@ Magento 2 CLI tool for AI agents and developers. Queries Magento 2 stores via RE
 
 ## Build
 
+Go 1.25+ required (see go.mod).
+
 ```bash
-make build        # Output: bin/magecli
+make build        # Output: bin/magecli (version from git tags/commit)
 make test         # Run tests
+make fmt          # go fmt
+make lint         # golangci-lint run
 make tidy         # go mod tidy
-make sync-skills  # Sync skills to .claude/ and .codex/
+make verify       # go mod verify
+make vulncheck    # govulncheck ./...
+make clean        # rm bin/ and dist/
+make sync-skills  # Sync skills/ → .claude/skills/ and .codex/skills/
+make check-skills # Verify skill copies are in sync
 ```
 
 ## Architecture
@@ -56,6 +64,25 @@ pkg/
   browser/            URL opener
 ```
 
+## Config File
+
+Located at `~/.config/magecli/config.yml` (override with `MAGECLI_CONFIG_DIR`):
+
+```yaml
+version: 1
+active_context: production
+contexts:
+  production:
+    host: store.example.com
+    store_code: default
+    allow_writes: false
+hosts:
+  store.example.com:
+    base_url: https://store.example.com
+```
+
+Tokens are stored in the OS keyring, never written to the config file.
+
 ## Dependencies
 
 - `github.com/spf13/cobra` - CLI framework
@@ -71,3 +98,31 @@ Magento 2.3.2+ requires authentication for all REST reads. Uses Integration Bear
 ## Write Safety
 
 Contexts are **read-only by default**. The `api` command blocks non-GET/HEAD methods unless the context has `allow_writes: true` (set via `context create --allow-writes`). All first-class commands use GET only.
+
+## Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `MAGECLI_TOKEN` | Bearer token (bypasses OS keyring) |
+| `MAGECLI_CONFIG_DIR` | Config directory override (default: `~/.config/magecli`) |
+| `MAGECLI_HTTP_DEBUG` | Enable HTTP request/response logging |
+| `MAGECLI_PAGER` | Pager command override |
+| `MAGECLI_ALLOW_INSECURE_STORE` | Allow encrypted file keyring fallback |
+
+## Testing
+
+Tests use standard Go table-driven patterns with `t.Run()` subtests. No mocking frameworks — tests use `t.TempDir()` for config isolation. Run with `make test`.
+
+## Releasing
+
+Releases are automated via GitHub Actions + GoReleaser:
+
+1. Push a version tag: `git tag v0.1.0 && git push origin v0.1.0`
+2. The `release.yml` workflow triggers, building binaries for linux/darwin/windows on amd64/arm64
+3. GoReleaser creates a GitHub Release with archives, checksums, and changelog
+
+Config: `.goreleaser.yml`. Version, commit, and date are injected via ldflags into `internal/build`.
+
+## Skills (AI Agent Docs)
+
+The `skills/magecli/` directory is the **source of truth** for AI agent documentation. Run `make sync-skills` to copy to `.claude/skills/` and `.codex/skills/`. Run `make check-skills` to verify they're in sync. Always edit `skills/` first, then sync.
