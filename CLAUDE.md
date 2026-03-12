@@ -41,6 +41,8 @@ pkg/
     attribute/        view, options, sets
     inventory/        status
     store/            views, config, groups, websites
+    config/           System config get, list, dump
+    promo/            catalog-rule, cart-rule, coupon list/view
     cms/              page list/view, block list/view
     api/              Raw API escape hatch
   cmdutil/            Factory, context resolution, output helpers

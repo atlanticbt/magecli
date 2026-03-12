@@ -44,7 +44,7 @@ func TestRootHasSubcommands(t *testing.T) {
 	f := testFactory()
 	cmd, _ := NewCmdRoot(f)
 
-	expected := []string{"auth", "context", "product", "category", "attribute", "inventory", "store", "cms", "api"}
+	expected := []string{"auth", "context", "product", "category", "attribute", "inventory", "store", "config", "promo", "cms", "api"}
 	commands := make(map[string]bool)
 	for _, sub := range cmd.Commands() {
 		commands[sub.Name()] = true

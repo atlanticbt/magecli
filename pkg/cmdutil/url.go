@@ -11,7 +11,10 @@ func NormalizeBaseURL(raw string) (string, error) {
 	if raw == "" {
 		return "", fmt.Errorf("host is required")
 	}
-	if !strings.HasPrefix(raw, "http://") && !strings.HasPrefix(raw, "https://") {
+	if strings.HasPrefix(raw, "http://") {
+		return "", fmt.Errorf("insecure HTTP is not allowed; use https:// to protect authentication tokens")
+	}
+	if !strings.HasPrefix(raw, "https://") {
 		raw = "https://" + raw
 	}
 	u, err := url.Parse(raw)

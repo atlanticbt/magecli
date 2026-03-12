@@ -44,7 +44,7 @@ func New(opts ClientOptions) (*Client, error) {
 		storeCode = "default"
 	}
 
-	u.Path = fmt.Sprintf("/rest/%s", storeCode)
+	u.Path = fmt.Sprintf("/rest/%s", url.PathEscape(storeCode))
 
 	httpClient, err := httpx.New(httpx.Options{
 		BaseURL:     u.String(),

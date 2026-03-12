@@ -10,7 +10,7 @@ func TestNormalizeBaseURL(t *testing.T) {
 		wantErr bool
 	}{
 		{"full https URL", "https://store.example.com", "https://store.example.com", false},
-		{"http URL", "http://store.example.com", "http://store.example.com", false},
+		{"http URL rejected", "http://store.example.com", "", true},
 		{"bare hostname", "store.example.com", "https://store.example.com", false},
 		{"trailing slash", "https://store.example.com/", "https://store.example.com", false},
 		{"with path", "https://store.example.com/magento", "https://store.example.com/magento", false},

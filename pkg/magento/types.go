@@ -206,6 +206,70 @@ type Website struct {
 	DefaultGroupID  int    `json:"default_group_id"`
 }
 
+// CatalogRule represents a Magento 2 catalog price rule.
+type CatalogRule struct {
+	RuleID             int    `json:"rule_id"`
+	Name               string `json:"name"`
+	Description        string `json:"description"`
+	IsActive           bool   `json:"is_active"`
+	StopRulesProcessing bool  `json:"stop_rules_processing"`
+	SortOrder          int    `json:"sort_order"`
+	SimpleAction       string `json:"simple_action"`
+	DiscountAmount     float64 `json:"discount_amount"`
+	FromDate           string `json:"from_date"`
+	ToDate             string `json:"to_date"`
+	CustomerGroupIDs   []int  `json:"customer_group_ids"`
+	WebsiteIDs         []int  `json:"website_ids"`
+	ExtensionAttrs     map[string]any `json:"extension_attributes,omitempty"`
+}
+
+// CartRule represents a Magento 2 cart price rule (sales rule).
+type CartRule struct {
+	RuleID              int            `json:"rule_id"`
+	Name                string         `json:"name"`
+	Description         string         `json:"description"`
+	IsActive            bool           `json:"is_active"`
+	StopRulesProcessing bool           `json:"stop_rules_processing"`
+	SortOrder           int            `json:"sort_order"`
+	SimpleAction        string         `json:"simple_action"`
+	DiscountAmount      float64        `json:"discount_amount"`
+	DiscountQty         float64        `json:"discount_qty"`
+	DiscountStep        int            `json:"discount_step"`
+	ApplyToShipping     bool           `json:"apply_to_shipping"`
+	TimesUsed           int            `json:"times_used"`
+	IsRSS               bool           `json:"is_rss"`
+	CouponType          string         `json:"coupon_type"`
+	UseAutoGeneration   bool           `json:"use_auto_generation"`
+	UsesPerCoupon       int            `json:"uses_per_coupon"`
+	UsesPerCustomer     int            `json:"uses_per_customer"`
+	FromDate            string         `json:"from_date"`
+	ToDate              string         `json:"to_date"`
+	CustomerGroupIDs    []int          `json:"customer_group_ids"`
+	WebsiteIDs          []int          `json:"website_ids"`
+	StoreLabels         []StoreLabel   `json:"store_labels,omitempty"`
+	ExtensionAttrs      map[string]any `json:"extension_attributes,omitempty"`
+}
+
+// StoreLabel represents a label for a specific store view.
+type StoreLabel struct {
+	StoreID int    `json:"store_id"`
+	Label   string `json:"store_label"`
+}
+
+// Coupon represents a Magento 2 coupon.
+type Coupon struct {
+	CouponID        int    `json:"coupon_id"`
+	RuleID          int    `json:"rule_id"`
+	Code            string `json:"code"`
+	UsageLimit      int    `json:"usage_limit"`
+	UsagePerCustomer int   `json:"usage_per_customer"`
+	TimesUsed       int    `json:"times_used"`
+	IsPrimary       bool   `json:"is_primary"`
+	Type            int    `json:"type"`
+	CreatedAt       string `json:"created_at"`
+	ExpirationDate  string `json:"expiration_date"`
+}
+
 // CMSPage represents a Magento 2 CMS page.
 type CMSPage struct {
 	ID              int    `json:"id"`

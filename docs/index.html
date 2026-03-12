@@ -462,6 +462,8 @@
     <a href="#attributes" class="sidebar-link">Attributes</a>
     <a href="#inventory" class="sidebar-link">Inventory</a>
     <a href="#store" class="sidebar-link">Store Config</a>
+    <a href="#config" class="sidebar-link">System Config</a>
+    <a href="#promo" class="sidebar-link">Promotions</a>
     <a href="#cms" class="sidebar-link">CMS</a>
     <a href="#api" class="sidebar-link">Raw API</a>
   </div>
@@ -495,8 +497,8 @@
 
   <!-- Hero -->
   <section class="hero-section" id="top">
-    <h2>Give AI agents &mdash; and yourself &mdash; direct access to Magento 2.</h2>
-    <p class="tagline">A CLI that lets Claude Code, Codex, and developers query Magento 2 stores via the REST API. Ships with prebuilt AI skills so your agent can explore products, inventory, and content out of the box.</p>
+    <h2>magecli <span style="font-weight:400;color:var(--text-muted)">by Atlantic BT</span></h2>
+    <p class="tagline">A Magento 2 CLI for developers and AI agents. Query products, inventory, promotions, configuration, and content via the REST API. Ships with prebuilt AI skills for Claude Code and Codex.</p>
     <div class="hero-install">
       <span class="dollar">$</span> go install github.com/atlanticbt/magecli/cmd/magecli@latest
     </div>
@@ -706,6 +708,15 @@
         <tr><td><code>store config [code]</code></td><td>Show store configuration</td></tr>
         <tr><td><code>store groups</code></td><td>List store groups</td></tr>
         <tr><td><code>store websites</code></td><td>List websites</td></tr>
+        <tr><td><code>config list</code></td><td>List config as path=value pairs</td></tr>
+        <tr><td><code>config get &lt;path&gt;</code></td><td>Get a specific config value</td></tr>
+        <tr><td><code>config dump</code></td><td>Dump all config for env diffing</td></tr>
+        <tr><td><code>promo catalog-rule list</code></td><td>List catalog price rules</td></tr>
+        <tr><td><code>promo catalog-rule view &lt;id&gt;</code></td><td>View catalog price rule details</td></tr>
+        <tr><td><code>promo cart-rule list</code></td><td>List cart price rules</td></tr>
+        <tr><td><code>promo cart-rule view &lt;id&gt;</code></td><td>View cart price rule details</td></tr>
+        <tr><td><code>promo coupon list</code></td><td>List coupon codes</td></tr>
+        <tr><td><code>promo coupon view &lt;id&gt;</code></td><td>View coupon details</td></tr>
         <tr><td><code>cms page list</code></td><td>List CMS pages</td></tr>
         <tr><td><code>cms page view &lt;id&gt;</code></td><td>View a CMS page</td></tr>
         <tr><td><code>cms block list</code></td><td>List CMS blocks</td></tr>
@@ -825,6 +836,73 @@
 <span class="g">magecli store groups</span>
 <span class="g">magecli store websites</span></code></pre>
     <p>Config includes locale, currency, timezone, weight unit, and all base URLs (standard, secure, media, static).</p>
+  </section>
+
+  <!-- System Config -->
+  <section id="config">
+    <h2>System Configuration</h2>
+    <p>Query Magento system configuration values for auditing and environment comparison.</p>
+    <pre><code><span class="c"># List all config values as path=value</span>
+<span class="g">magecli config list</span>
+
+<span class="c"># Filter to a specific section</span>
+<span class="g">magecli config list</span> <span class="b">--filter</span> <span class="s">web/secure</span>
+<span class="g">magecli config list</span> <span class="b">--filter</span> <span class="s">currency</span>
+
+<span class="c"># Get a specific config path</span>
+<span class="g">magecli config get</span> <span class="s">general/locale/code</span>
+<span class="g">magecli config get</span> <span class="s">web/secure/base_url</span>
+
+<span class="c"># Compare environments</span>
+diff &lt;(<span class="g">magecli</span> <span class="b">-c</span> staging <span class="g">config list</span>) &lt;(<span class="g">magecli</span> <span class="b">-c</span> prod <span class="g">config list</span>)
+diff &lt;(<span class="g">magecli</span> <span class="b">-c</span> staging <span class="g">config dump</span> <span class="b">--json</span>) &lt;(<span class="g">magecli</span> <span class="b">-c</span> prod <span class="g">config dump</span> <span class="b">--json</span>)</code></pre>
+    <p>Config paths follow the Magento convention (e.g., <code>general/locale/code</code>, <code>web/unsecure/base_url</code>, <code>currency/options/base</code>). Output is grouped by store scope.</p>
+  </section>
+
+  <!-- Promotions -->
+  <section id="promo">
+    <h2>Promotions</h2>
+    <p>View catalog price rules, cart price rules, and coupon codes. All list commands support <code>--filter</code>, <code>--sort</code>, <code>--limit</code>, and <code>--page</code>.</p>
+
+    <h3>Catalog Price Rules</h3>
+    <p>Applied to products <em>before</em> they are added to the cart.</p>
+    <pre><code><span class="c"># List all catalog rules</span>
+<span class="g">magecli promo catalog-rule list</span>
+
+<span class="c"># Only active rules</span>
+<span class="g">magecli promo catalog-rule list</span> <span class="b">--filter</span> <span class="s">"is_active eq 1"</span>
+
+<span class="c"># View rule details</span>
+<span class="g">magecli promo catalog-rule view</span> 42 <span class="b">--json</span></code></pre>
+
+    <h3>Cart Price Rules</h3>
+    <p>Applied at checkout. May include coupon codes, free shipping, or buy-X-get-Y offers.</p>
+    <pre><code><span class="c"># List all cart rules</span>
+<span class="g">magecli promo cart-rule list</span>
+
+<span class="c"># Active rules with coupon codes</span>
+<span class="g">magecli promo cart-rule list</span> <span class="b">--filter</span> <span class="s">"is_active eq 1"</span> <span class="b">--json</span>
+
+<span class="c"># View full details</span>
+<span class="g">magecli promo cart-rule view</span> 5</code></pre>
+
+    <h3>Coupons</h3>
+    <p>View coupon codes, usage stats, and expiration dates.</p>
+    <pre><code><span class="c"># List all coupons</span>
+<span class="g">magecli promo coupon list</span>
+
+<span class="c"># Search by code</span>
+<span class="g">magecli promo coupon list</span> <span class="b">--filter</span> <span class="s">"code like %SUMMER%"</span>
+
+<span class="c"># Coupons for a specific rule</span>
+<span class="g">magecli promo coupon list</span> <span class="b">--filter</span> <span class="s">"rule_id eq 5"</span>
+
+<span class="c"># View coupon details</span>
+<span class="g">magecli promo coupon view</span> 1</code></pre>
+
+    <div class="callout">
+      <p><strong>Tip:</strong> Short aliases are available &mdash; <code>promo cr list</code> for catalog rules and <code>promo sr list</code> for cart (sales) rules.</p>
+    </div>
   </section>
 
   <!-- CMS -->
@@ -1050,6 +1128,34 @@ hosts:
     <div class="callout">
       <p><strong>Prompt:</strong> <em>"Check if store config for base URLs looks correct across all store views"</em></p>
       <p>The agent uses <code>store views</code> to enumerate views and <code>store config</code> to pull base URL values, flagging any that look misconfigured (e.g., still pointing to a dev domain).</p>
+    </div>
+
+    <h3>Configuration & Environment Management</h3>
+    <div class="callout">
+      <p><strong>Prompt:</strong> <em>"Compare all config values between staging and prod and tell me what's different"</em></p>
+      <p>The agent runs <code>config list</code> against both contexts and diffs the output, highlighting mismatched locales, base URLs, currency settings, or any other config drift between environments.</p>
+    </div>
+    <div class="callout">
+      <p><strong>Prompt:</strong> <em>"Verify that all store views are using HTTPS base URLs"</em></p>
+      <p>The agent uses <code>config get web/secure/base_url</code> and <code>config get web/unsecure/base_url</code> to check each store scope for non-HTTPS URLs.</p>
+    </div>
+
+    <h3>Promotions & Pricing</h3>
+    <div class="callout">
+      <p><strong>Prompt:</strong> <em>"Show me all active promotions and which ones have coupon codes"</em></p>
+      <p>The agent queries <code>promo catalog-rule list --filter "is_active eq 1"</code> and <code>promo cart-rule list --filter "is_active eq 1"</code>, then cross-references cart rules with <code>promo coupon list</code> to show which rules have associated coupon codes.</p>
+    </div>
+    <div class="callout">
+      <p><strong>Prompt:</strong> <em>"Are there any expired promotions still marked as active?"</em></p>
+      <p>The agent lists active catalog and cart rules and checks their <code>to_date</code> values against today's date, flagging any that have passed their end date but weren't deactivated.</p>
+    </div>
+    <div class="callout">
+      <p><strong>Prompt:</strong> <em>"Which coupon codes are close to hitting their usage limit?"</em></p>
+      <p>The agent pulls <code>promo coupon list --json</code> and compares <code>times_used</code> against <code>usage_limit</code>, highlighting coupons where usage is above 80% of the limit.</p>
+    </div>
+    <div class="callout">
+      <p><strong>Prompt:</strong> <em>"Give me a report of all cart rules that apply free shipping"</em></p>
+      <p>The agent queries <code>promo cart-rule list --json</code> and filters for rules where <code>apply_to_shipping</code> is true or the action suggests free shipping, then summarizes the conditions and customer groups.</p>
     </div>
 
     <h3>Content Auditing</h3>

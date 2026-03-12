@@ -66,9 +66,16 @@ func (s *SearchCriteria) AddSort(expr string) error {
 	return nil
 }
 
-// SetPageSize sets the number of results per page.
+// MaxPageSize is the upper bound for results per page to prevent
+// accidental resource exhaustion on large catalogs.
+const MaxPageSize = 10000
+
+// SetPageSize sets the number of results per page (capped at MaxPageSize).
 func (s *SearchCriteria) SetPageSize(size int) {
 	if size > 0 {
+		if size > MaxPageSize {
+			size = MaxPageSize
+		}
 		s.pageSize = size
 	}
 }

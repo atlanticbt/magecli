@@ -45,6 +45,15 @@ func TestSetPageSize_IgnoresZeroAndNegative(t *testing.T) {
 	}
 }
 
+func TestSetPageSize_CapsAtMax(t *testing.T) {
+	s := NewSearch()
+	s.SetPageSize(50000)
+	vals, _ := url.ParseQuery(s.Encode())
+	if got := vals.Get("searchCriteria[pageSize]"); got != "10000" {
+		t.Errorf("pageSize after SetPageSize(50000) = %q, want 10000 (MaxPageSize)", got)
+	}
+}
+
 func TestSetCurrentPage(t *testing.T) {
 	s := NewSearch()
 	s.SetCurrentPage(3)
