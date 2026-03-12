@@ -166,6 +166,67 @@ magecli store websites [--json]
 ```
 List all websites.
 
+## config
+
+### config list
+```
+magecli config list [--filter <path-or-keyword>] [--json]
+```
+List all queryable Magento configuration values as path=value pairs. Use `--filter` to narrow results by config path prefix or keyword. Output is designed for environment comparison:
+```
+diff <(magecli -c staging config list) <(magecli -c prod config list)
+```
+
+### config get
+```
+magecli config get <path> [--json]
+```
+Get the value of a specific Magento configuration path (e.g., `general/locale/code`, `web/secure/base_url`). Supports exact and prefix matches. Shows values for each store scope.
+
+### config dump
+```
+magecli config dump [--json] [--yaml]
+```
+Dump all queryable configuration as structured data. Best used with `--json` or `--yaml` for diffing between environments.
+
+## promo
+
+### promo catalog-rule list
+```
+magecli promo catalog-rule list [--filter "field op value"] [--sort "field:DIR"] [--limit N] [--page N] [--json]
+```
+List catalog price rules (applied to products before they are added to the cart). Alias: `promo cr list`.
+
+### promo catalog-rule view
+```
+magecli promo catalog-rule view <id> [--json]
+```
+View a catalog price rule by ID. Shows name, action, discount amount, date range, customer groups, and websites.
+
+### promo cart-rule list
+```
+magecli promo cart-rule list [--filter "field op value"] [--sort "field:DIR"] [--limit N] [--page N] [--json]
+```
+List cart price rules (sales rules, applied at checkout). Alias: `promo sr list`.
+
+### promo cart-rule view
+```
+magecli promo cart-rule view <id> [--json]
+```
+View a cart price rule by ID. Shows name, action, discount, coupon type, usage limits, date range, and more.
+
+### promo coupon list
+```
+magecli promo coupon list [--filter "field op value"] [--sort "field:DIR"] [--limit N] [--page N] [--json]
+```
+List coupon codes. Filter by code, rule_id, or other fields.
+
+### promo coupon view
+```
+magecli promo coupon view <id> [--json]
+```
+View coupon details including code, usage stats, limits, and expiration.
+
 ## cms
 
 ### cms page list

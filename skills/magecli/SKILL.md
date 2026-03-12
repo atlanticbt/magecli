@@ -14,6 +14,15 @@ triggers:
   - cms block
   - store config
   - store views
+  - magento config
+  - config compare
+  - environment config
+  - catalog price rule
+  - cart price rule
+  - coupon
+  - promotion
+  - sales rule
+  - promo
 ---
 
 # magecli - Magento 2 CLI
@@ -77,6 +86,15 @@ magecli context create production --host store.example.com --set-active --allow-
 | `magecli store config [code]` | Show store configuration |
 | `magecli store groups` | List store groups |
 | `magecli store websites` | List websites |
+| `magecli config list` | List config as path=value pairs |
+| `magecli config get <path>` | Get specific config value |
+| `magecli config dump` | Dump all config for diffing |
+| `magecli promo catalog-rule list` | List catalog price rules |
+| `magecli promo catalog-rule view <id>` | View catalog price rule |
+| `magecli promo cart-rule list` | List cart price rules |
+| `magecli promo cart-rule view <id>` | View cart price rule |
+| `magecli promo coupon list` | List coupon codes |
+| `magecli promo coupon view <id>` | View coupon details |
 | `magecli cms page list` | List CMS pages |
 | `magecli cms page view <id>` | View CMS page details |
 | `magecli cms block list` | List CMS blocks |
