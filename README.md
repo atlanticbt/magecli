@@ -1,10 +1,14 @@
-# magecli
+<p align="center">
+  <img src="docs/readme-banner.png" alt="magecli - Magento 2 CLI for AI Agents & Developers" width="100%">
+</p>
 
-[![CI](https://github.com/atlanticbt/magecli/actions/workflows/ci.yml/badge.svg)](https://github.com/atlanticbt/magecli/actions/workflows/ci.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/atlanticbt/magecli)](https://goreportcard.com/report/github.com/atlanticbt/magecli)
-[![Go Reference](https://pkg.go.dev/badge/github.com/atlanticbt/magecli.svg)](https://pkg.go.dev/github.com/atlanticbt/magecli)
-[![Release](https://img.shields.io/github/v/release/atlanticbt/magecli)](https://github.com/atlanticbt/magecli/releases/latest)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+<p align="center">
+  <a href="https://github.com/atlanticbt/magecli/actions/workflows/ci.yml"><img src="https://github.com/atlanticbt/magecli/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://goreportcard.com/report/github.com/atlanticbt/magecli"><img src="https://goreportcard.com/badge/github.com/atlanticbt/magecli" alt="Go Report Card"></a>
+  <a href="https://pkg.go.dev/github.com/atlanticbt/magecli"><img src="https://pkg.go.dev/badge/github.com/atlanticbt/magecli.svg" alt="Go Reference"></a>
+  <a href="https://github.com/atlanticbt/magecli/releases/latest"><img src="https://img.shields.io/github/v/release/atlanticbt/magecli" alt="Release"></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+</p>
 
 A CLI tool for querying Magento 2 stores via the REST API. Built for AI agents (Claude Code, Codex) and developers.
 

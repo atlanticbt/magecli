@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1200" height="300" viewBox="0 0 1200 300">
+  <defs>
+    <linearGradient id="brandLine" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#BAE533"/>
+      <stop offset="100%" style="stop-color:#d0f54d"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="300" fill="#ffffff"/>
+
+  <!-- Subtle dot grid -->
+  <pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse">
+    <circle cx="10" cy="10" r="0.6" fill="#e0e0e0"/>
+  </pattern>
+  <rect width="1200" height="300" fill="url(#dots)"/>
+
+  <!-- Top accent bar -->
+  <rect x="0" y="0" width="1200" height="3" fill="url(#brandLine)"/>
+
+  <!-- Subtle green glow centered -->
+  <ellipse cx="600" cy="150" rx="500" ry="140" fill="#BAE533" opacity="0.035"/>
+
+  <!-- === LEFT SIDE: Branding === -->
+
+  <!-- Title: magecli -->
+  <text x="62" y="112" font-family="'Figtree', 'Inter', -apple-system, sans-serif" font-size="52" font-weight="800" letter-spacing="-2">
+    <tspan fill="#1b1b1c">magecli</tspan>
+  </text>
+  <!-- Green underline below descender -->
+  <rect x="62" y="126" width="240" height="3" rx="1.5" fill="#BAE533"/>
+
+  <!-- Subtitle -->
+  <text x="62" y="158" font-family="'Figtree', 'Inter', -apple-system, sans-serif" font-size="15" fill="#566971" font-weight="500">
+    Magento 2 CLI for AI Agents &amp; Developers
+  </text>
+
+  <!-- Badges row -->
+  <rect x="62" y="178" width="42" height="22" rx="11" fill="rgba(186,229,51,0.15)" stroke="#7ec820" stroke-width="0.75"/>
+  <text x="83" y="193" font-family="'Figtree', sans-serif" font-size="10" font-weight="600" fill="#2d6a00" text-anchor="middle">Go</text>
+
+  <rect x="112" y="178" width="72" height="22" rx="11" fill="rgba(96,165,250,0.1)" stroke="#93b4f4" stroke-width="0.75"/>
+  <text x="148" y="193" font-family="'Figtree', sans-serif" font-size="10" font-weight="600" fill="#1e40af" text-anchor="middle">REST API</text>
+
+  <rect x="192" y="178" width="72" height="22" rx="11" fill="rgba(255,0,126,0.08)" stroke="#FF007E" stroke-width="0.75"/>
+  <text x="228" y="193" font-family="'Figtree', sans-serif" font-size="10" font-weight="600" fill="#FF007E" text-anchor="middle">AI-Ready</text>
+
+  <rect x="272" y="178" width="90" height="22" rx="11" fill="rgba(186,229,51,0.15)" stroke="#7ec820" stroke-width="0.75"/>
+  <text x="317" y="193" font-family="'Figtree', sans-serif" font-size="10" font-weight="600" fill="#2d6a00" text-anchor="middle">Open Source</text>
+
+
+  <!-- === RIGHT SIDE: Terminal === -->
+  <rect x="480" y="40" width="660" height="220" rx="8" fill="#1b1b1c" stroke="#e0e0e0" stroke-width="0.5"/>
+
+  <!-- Terminal title bar -->
+  <rect x="480" y="40" width="660" height="28" rx="8" fill="#252527"/>
+  <rect x="480" y="60" width="660" height="8" fill="#252527"/>
+  <circle cx="500" cy="54" r="4.5" fill="#ff5f57"/>
+  <circle cx="516" cy="54" r="4.5" fill="#febc2e"/>
+  <circle cx="532" cy="54" r="4.5" fill="#28c840"/>
+  <text x="810" y="58" font-family="'JetBrains Mono', monospace" font-size="11" fill="#8b8b96" text-anchor="middle">magecli</text>
+
+  <!-- Line 1: product list -->
+  <text x="506" y="92" font-family="'JetBrains Mono', 'SF Mono', monospace" font-size="13">
+    <tspan fill="#BAE533">$</tspan>
+    <tspan fill="#d4d4d8"> magecli product list --limit </tspan>
+    <tspan fill="#BAE533">3</tspan>
+    <tspan fill="#d4d4d8"> --json</tspan>
+  </text>
+  <text font-family="'JetBrains Mono', 'SF Mono', monospace" font-size="11.5" fill="#8b8b96">
+    <tspan x="506" y="112">[{</tspan><tspan fill="#60a5fa">"sku"</tspan><tspan fill="#8b8b96">: </tspan><tspan fill="#fbbf24">"EXAMPLE-001"</tspan><tspan fill="#8b8b96">, </tspan><tspan fill="#60a5fa">"name"</tspan><tspan fill="#8b8b96">: </tspan><tspan fill="#fbbf24">"Sample Product"</tspan><tspan fill="#8b8b96">, ...</tspan>
+  </text>
+
+  <!-- Line 2: category tree -->
+  <text x="506" y="140" font-family="'JetBrains Mono', 'SF Mono', monospace" font-size="13">
+    <tspan fill="#BAE533">$</tspan>
+    <tspan fill="#d4d4d8"> magecli category tree --json</tspan>
+  </text>
+  <text font-family="'JetBrains Mono', 'SF Mono', monospace" font-size="11.5" fill="#8b8b96">
+    <tspan x="506" y="160">{</tspan><tspan fill="#60a5fa">"id"</tspan><tspan fill="#8b8b96">: </tspan><tspan fill="#BAE533">2</tspan><tspan fill="#8b8b96">, </tspan><tspan fill="#60a5fa">"name"</tspan><tspan fill="#8b8b96">: </tspan><tspan fill="#fbbf24">"Default Category"</tspan><tspan fill="#8b8b96">, </tspan><tspan fill="#60a5fa">"children"</tspan><tspan fill="#8b8b96">: [...]}</tspan>
+  </text>
+
+  <!-- Line 3: store config -->
+  <text x="506" y="188" font-family="'JetBrains Mono', 'SF Mono', monospace" font-size="13">
+    <tspan fill="#BAE533">$</tspan>
+    <tspan fill="#d4d4d8"> magecli store config </tspan>
+    <tspan fill="#fbbf24">"general/locale/code"</tspan>
+  </text>
+  <text font-family="'JetBrains Mono', 'SF Mono', monospace" font-size="11.5" fill="#8b8b96">
+    <tspan x="506" y="208">en_US</tspan>
+  </text>
+
+  <!-- Cursor -->
+  <rect x="506" y="220" width="8" height="14" rx="1" fill="#BAE533" opacity="0.8"/>
+
+  <!-- Bottom accent bar -->
+  <rect x="0" y="297" width="1200" height="3" fill="url(#brandLine)"/>
+</svg>
