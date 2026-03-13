@@ -14,6 +14,7 @@ import (
 	"github.com/atlanticbt/magecli/pkg/cmd/product"
 	"github.com/atlanticbt/magecli/pkg/cmd/promo"
 	"github.com/atlanticbt/magecli/pkg/cmd/store"
+	"github.com/atlanticbt/magecli/pkg/cmd/update"
 	"github.com/atlanticbt/magecli/pkg/cmdutil"
 )
 
@@ -58,6 +59,7 @@ Common flows:
 		promo.NewCmdPromo(f),
 		cms.NewCmdCMS(f),
 		api.NewCmdAPI(f),
+		update.NewCmdUpdate(f),
 	)
 
 	root.Version = f.AppVersion

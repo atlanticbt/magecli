@@ -263,6 +263,14 @@ Make raw Magento REST API requests. Path is relative to /rest/{store_code}/.
 
 GET and HEAD requests are always allowed. Write methods (POST, PUT, DELETE, PATCH) require the active context to have been created with `--allow-writes`.
 
+## update
+
+### update
+```
+magecli update [--force]
+```
+Self-update magecli to the latest GitHub release. Downloads the appropriate binary for your OS/architecture, verifies the SHA-256 checksum, and replaces the current binary. Use `--force` to reinstall even if already on the latest version.
+
 ## Global Flags
 
 | Flag | Description |

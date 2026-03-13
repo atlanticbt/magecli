@@ -74,6 +74,7 @@ magecli inventory status SKU123 --json
 | `promo catalog-rule/cart-rule/coupon list/view` | Promotions & coupons |
 | `cms page list/view`, `cms block list/view` | CMS content |
 | `api` | Raw REST API escape hatch (read-only by default) |
+| `update` | Self-update to the latest release |
 
 ## Authentication
 
@@ -126,6 +127,15 @@ magecli product list --yaml                          # YAML
 magecli product list --json --jq '.items[].sku'     # jq filter
 magecli product list --json --template '...'         # Go template
 ```
+
+## Updating
+
+```bash
+magecli update          # Update to the latest release
+magecli update --force  # Reinstall even if already on the latest version
+```
+
+Downloads the latest release from GitHub, verifies the SHA-256 checksum, and replaces the binary in place.
 
 ## AI Agent Integration
 

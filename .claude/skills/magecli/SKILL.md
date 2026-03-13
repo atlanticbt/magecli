@@ -100,6 +100,7 @@ magecli context create production --host store.example.com --set-active --allow-
 | `magecli cms block list` | List CMS blocks |
 | `magecli cms block view <id>` | View CMS block details |
 | `magecli api <path>` | Raw API escape hatch |
+| `magecli update` | Self-update to latest release |
 
 ## Filtering & Sorting
 

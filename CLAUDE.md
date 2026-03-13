@@ -53,6 +53,7 @@ pkg/
     promo/            catalog-rule, cart-rule, coupon list/view
     cms/              page list/view, block list/view
     api/              Raw API escape hatch
+    update/           Self-update from GitHub releases
   cmdutil/            Factory, context resolution, output helpers
   magento/            REST client + SearchCriteria builder
   httpx/              HTTP client (Bearer auth, retry, cache)
@@ -90,6 +91,7 @@ Tokens are stored in the OS keyring, never written to the config file.
 - `github.com/itchyny/gojq` - jq support
 - `golang.org/x/term` - Terminal detection
 - `gopkg.in/yaml.v3` - YAML config + output
+- `github.com/creativeprojects/go-selfupdate` - Self-update from GitHub releases
 
 ## Auth
 
@@ -131,3 +133,21 @@ npx skills add atlanticbt/magecli
 ```
 
 The `skills/magecli/` directory is the **source of truth** for AI agent documentation. Run `make sync-skills` to copy to `.claude/skills/` and `.codex/skills/`. Run `make check-skills` to verify they're in sync. Always edit `skills/` first, then sync.
+
+## Documentation Checklist
+
+When adding or changing commands, flags, or features, update **all** of these locations:
+
+1. **`skills/magecli/references/commands.md`** — Full command reference (syntax, flags, descriptions)
+2. **`skills/magecli/SKILL.md`** — Quick reference table + triggers list in frontmatter
+3. **`README.md`** — Commands table and any relevant sections
+4. **`docs/index.html`** — Documentation website (sidebar nav, command sections, examples)
+5. **`CLAUDE.md`** — Project structure tree, dependencies, and any architectural notes
+6. **Run `make sync-skills`** — Copies `skills/` to `.claude/skills/` and `.codex/skills/`
+
+For command changes specifically:
+- Add the command to the sidebar nav in `docs/index.html`
+- Add a full `<section>` with examples in `docs/index.html`
+- Add a `## command` / `### subcommand` block in `commands.md`
+- Add a row to the quick reference table in `SKILL.md`
+- Add triggers to the SKILL.md frontmatter if the command introduces new trigger keywords
