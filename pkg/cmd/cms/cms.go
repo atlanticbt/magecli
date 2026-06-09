@@ -35,44 +35,47 @@ func newPageCmd(f *cmdutil.Factory) *cobra.Command {
 
 func newPageListCmd(f *cmdutil.Factory) *cobra.Command {
 	var filters []string
-	var limit int
+	var limit, page int
 
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List CMS pages",
 		Long: `List CMS pages with optional filtering.
 
+Page HTML content is omitted from list output; use 'cms page view <id> --content'
+to retrieve a single page's body.
+
 Examples:
   magecli cms page list
   magecli cms page list --filter "identifier like %home%"
+  magecli cms page list --filter "content like %promo%"   # search page bodies
   magecli cms page list --json --jq '.items[] | {id, identifier, title}'`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runPageList(cmd, f, filters, limit)
+			return runPageList(cmd, f, filters, limit, page)
 		},
 	}
 	cmd.Flags().StringArrayVar(&filters, "filter", nil, `Filter expression (e.g. "title like %about%")`)
-	cmd.Flags().IntVar(&limit, "limit", 50, "Number of results")
+	cmd.Flags().IntVar(&limit, "limit", 50, "Number of results per page (1-10000)")
+	cmd.Flags().IntVar(&page, "page", 1, "Page number")
 	return cmd
 }
 
-func runPageList(cmd *cobra.Command, f *cmdutil.Factory, filters []string, limit int) error {
-	ios, err := f.Streams()
-	if err != nil {
+func runPageList(cmd *cobra.Command, f *cmdutil.Factory, filters []string, limit, page int) error {
+	if err := cmdutil.ValidateLimit(limit); err != nil {
 		return err
 	}
 
-	_, ctx, host, err := cmdutil.ResolveContext(f, cmd, cmdutil.FlagValue(cmd, "context"))
-	if err != nil {
-		return err
-	}
-
-	client, err := cmdutil.NewMagentoClient(host, ctx.StoreCode)
+	ios, client, err := cmdutil.ClientFromCmd(f, cmd)
 	if err != nil {
 		return err
 	}
 
 	search := magento.NewSearch()
 	search.SetPageSize(limit)
+	search.SetCurrentPage(page)
+	// Exclude bulky HTML bodies server-side (retrieve via `cms page view`);
+	// content filters still work, fields= only shapes the response.
+	search.SetFields(magento.CMSPageMetadataFields)
 	for _, expr := range filters {
 		if err := search.AddFilter(expr); err != nil {
 			return fmt.Errorf("invalid filter: %w", err)
@@ -98,7 +101,7 @@ func runPageList(cmd *cobra.Command, f *cmdutil.Factory, filters []string, limit
 				active = "no"
 			}
 			_, _ = fmt.Fprintf(ios.Out, "%-5d  %-25s  %-40s  %s\n",
-				p.ID, truncate(p.Identifier, 25), truncate(p.Title, 40), active)
+				p.ID, cmdutil.Truncate(p.Identifier, 25), cmdutil.Truncate(p.Title, 40), active)
 		}
 		return nil
 	})
@@ -124,22 +127,18 @@ func newPageViewCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func runPageView(cmd *cobra.Command, f *cmdutil.Factory, id int, showContent bool) error {
-	ios, err := f.Streams()
+	ios, client, err := cmdutil.ClientFromCmd(f, cmd)
 	if err != nil {
 		return err
 	}
 
-	_, ctx, host, err := cmdutil.ResolveContext(f, cmd, cmdutil.FlagValue(cmd, "context"))
-	if err != nil {
-		return err
+	// Omit the HTML body unless explicitly requested — server-side, so it is
+	// never transferred, and absent from JSON/YAML output too.
+	fields := magento.CMSPageMetadataFields
+	if showContent {
+		fields = ""
 	}
-
-	client, err := cmdutil.NewMagentoClient(host, ctx.StoreCode)
-	if err != nil {
-		return err
-	}
-
-	page, err := client.GetCMSPage(cmd.Context(), id)
+	page, err := client.GetCMSPage(cmd.Context(), id, fields)
 	if err != nil {
 		return err
 	}
@@ -155,7 +154,7 @@ func runPageView(cmd *cobra.Command, f *cmdutil.Factory, id int, showContent boo
 			_, _ = fmt.Fprintf(ios.Out, "Meta Title: %s\n", page.MetaTitle)
 		}
 		if page.MetaDescription != "" {
-			_, _ = fmt.Fprintf(ios.Out, "Meta Desc:  %s\n", truncate(page.MetaDescription, 80))
+			_, _ = fmt.Fprintf(ios.Out, "Meta Desc:  %s\n", cmdutil.Truncate(page.MetaDescription, 80))
 		}
 		if showContent && page.Content != "" {
 			_, _ = fmt.Fprintf(ios.Out, "\nContent:\n%s\n", page.Content)
@@ -178,38 +177,46 @@ func newBlockCmd(f *cmdutil.Factory) *cobra.Command {
 
 func newBlockListCmd(f *cmdutil.Factory) *cobra.Command {
 	var filters []string
-	var limit int
+	var limit, page int
 
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List CMS blocks",
+		Long: `List CMS blocks with optional filtering.
+
+Block HTML content is omitted from list output; use 'cms block view <id> --content'
+to retrieve a single block's body.
+
+Examples:
+  magecli cms block list
+  magecli cms block list --filter "identifier like %footer%"
+  magecli cms block list --json`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runBlockList(cmd, f, filters, limit)
+			return runBlockList(cmd, f, filters, limit, page)
 		},
 	}
 	cmd.Flags().StringArrayVar(&filters, "filter", nil, `Filter expression (e.g. "identifier like %footer%")`)
-	cmd.Flags().IntVar(&limit, "limit", 50, "Number of results")
+	cmd.Flags().IntVar(&limit, "limit", 50, "Number of results per page (1-10000)")
+	cmd.Flags().IntVar(&page, "page", 1, "Page number")
 	return cmd
 }
 
-func runBlockList(cmd *cobra.Command, f *cmdutil.Factory, filters []string, limit int) error {
-	ios, err := f.Streams()
-	if err != nil {
+func runBlockList(cmd *cobra.Command, f *cmdutil.Factory, filters []string, limit, page int) error {
+	if err := cmdutil.ValidateLimit(limit); err != nil {
 		return err
 	}
 
-	_, ctx, host, err := cmdutil.ResolveContext(f, cmd, cmdutil.FlagValue(cmd, "context"))
-	if err != nil {
-		return err
-	}
-
-	client, err := cmdutil.NewMagentoClient(host, ctx.StoreCode)
+	ios, client, err := cmdutil.ClientFromCmd(f, cmd)
 	if err != nil {
 		return err
 	}
 
 	search := magento.NewSearch()
 	search.SetPageSize(limit)
+	search.SetCurrentPage(page)
+	// Exclude bulky HTML bodies server-side (retrieve via `cms block view`);
+	// content filters still work, fields= only shapes the response.
+	search.SetFields(magento.CMSBlockMetadataFields)
 	for _, expr := range filters {
 		if err := search.AddFilter(expr); err != nil {
 			return fmt.Errorf("invalid filter: %w", err)
@@ -235,7 +242,7 @@ func runBlockList(cmd *cobra.Command, f *cmdutil.Factory, filters []string, limi
 				active = "no"
 			}
 			_, _ = fmt.Fprintf(ios.Out, "%-5d  %-30s  %-40s  %s\n",
-				b.ID, truncate(b.Identifier, 30), truncate(b.Title, 40), active)
+				b.ID, cmdutil.Truncate(b.Identifier, 30), cmdutil.Truncate(b.Title, 40), active)
 		}
 		return nil
 	})
@@ -261,22 +268,18 @@ func newBlockViewCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func runBlockView(cmd *cobra.Command, f *cmdutil.Factory, id int, showContent bool) error {
-	ios, err := f.Streams()
+	ios, client, err := cmdutil.ClientFromCmd(f, cmd)
 	if err != nil {
 		return err
 	}
 
-	_, ctx, host, err := cmdutil.ResolveContext(f, cmd, cmdutil.FlagValue(cmd, "context"))
-	if err != nil {
-		return err
+	// Omit the HTML body unless explicitly requested — server-side, so it is
+	// never transferred, and absent from JSON/YAML output too.
+	fields := magento.CMSBlockMetadataFields
+	if showContent {
+		fields = ""
 	}
-
-	client, err := cmdutil.NewMagentoClient(host, ctx.StoreCode)
-	if err != nil {
-		return err
-	}
-
-	block, err := client.GetCMSBlock(cmd.Context(), id)
+	block, err := client.GetCMSBlock(cmd.Context(), id, fields)
 	if err != nil {
 		return err
 	}
@@ -293,11 +296,4 @@ func runBlockView(cmd *cobra.Command, f *cmdutil.Factory, id int, showContent bo
 		}
 		return nil
 	})
-}
-
-func truncate(s string, max int) string {
-	if len(s) <= max {
-		return s
-	}
-	return s[:max-3] + "..."
 }

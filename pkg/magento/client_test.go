@@ -117,7 +117,7 @@ func TestGetProduct(t *testing.T) {
 	defer srv.Close()
 
 	c := newTestClient(t, srv)
-	p, err := c.GetProduct(context.Background(), "SHOE-1")
+	p, err := c.GetProduct(context.Background(), "SHOE-1", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -340,7 +340,7 @@ func TestGetCMSPage(t *testing.T) {
 	defer srv.Close()
 
 	c := newTestClient(t, srv)
-	page, err := c.GetCMSPage(context.Background(), 11)
+	page, err := c.GetCMSPage(context.Background(), 11, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -375,7 +375,7 @@ func TestGetCMSBlock(t *testing.T) {
 	defer srv.Close()
 
 	c := newTestClient(t, srv)
-	block, err := c.GetCMSBlock(context.Background(), 31)
+	block, err := c.GetCMSBlock(context.Background(), 31, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -474,7 +474,7 @@ func TestClient_404Error(t *testing.T) {
 	defer srv.Close()
 
 	c := newTestClient(t, srv)
-	_, err := c.GetProduct(context.Background(), "NONEXISTENT")
+	_, err := c.GetProduct(context.Background(), "NONEXISTENT", "")
 	if err == nil {
 		t.Fatal("expected error for 404")
 	}

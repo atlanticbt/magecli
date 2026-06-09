@@ -67,23 +67,17 @@ Examples:
 	}
 	cmd.Flags().StringArrayVar(&filters, "filter", nil, `Filter expression (e.g. "is_active eq 1")`)
 	cmd.Flags().StringArrayVar(&sorts, "sort", nil, `Sort expression (e.g. "sort_order:ASC")`)
-	cmd.Flags().IntVar(&limit, "limit", 50, "Number of results per page")
+	cmd.Flags().IntVar(&limit, "limit", 50, "Number of results per page (1-10000)")
 	cmd.Flags().IntVar(&page, "page", 1, "Page number")
 	return cmd
 }
 
 func runCatalogRuleList(cmd *cobra.Command, f *cmdutil.Factory, filters, sorts []string, limit, page int) error {
-	ios, err := f.Streams()
-	if err != nil {
+	if err := cmdutil.ValidateLimit(limit); err != nil {
 		return err
 	}
 
-	_, ctx, host, err := cmdutil.ResolveContext(f, cmd, cmdutil.FlagValue(cmd, "context"))
-	if err != nil {
-		return err
-	}
-
-	client, err := cmdutil.NewMagentoClient(host, ctx.StoreCode)
+	ios, client, err := cmdutil.ClientFromCmd(f, cmd)
 	if err != nil {
 		return err
 	}
@@ -124,7 +118,7 @@ func runCatalogRuleList(cmd *cobra.Command, f *cmdutil.Factory, filters, sorts [
 			}
 			dates := formatDateRange(r.FromDate, r.ToDate)
 			_, _ = fmt.Fprintf(ios.Out, "%-5d  %-40s  %-12s  %-10.2f  %-7s  %s\n",
-				r.RuleID, truncate(r.Name, 40), r.SimpleAction, r.DiscountAmount, active, dates)
+				r.RuleID, cmdutil.Truncate(r.Name, 40), r.SimpleAction, r.DiscountAmount, active, dates)
 		}
 		return nil
 	})
@@ -146,17 +140,7 @@ func newCatalogRuleViewCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func runCatalogRuleView(cmd *cobra.Command, f *cmdutil.Factory, id int) error {
-	ios, err := f.Streams()
-	if err != nil {
-		return err
-	}
-
-	_, ctx, host, err := cmdutil.ResolveContext(f, cmd, cmdutil.FlagValue(cmd, "context"))
-	if err != nil {
-		return err
-	}
-
-	client, err := cmdutil.NewMagentoClient(host, ctx.StoreCode)
+	ios, client, err := cmdutil.ClientFromCmd(f, cmd)
 	if err != nil {
 		return err
 	}
@@ -232,23 +216,17 @@ Examples:
 	}
 	cmd.Flags().StringArrayVar(&filters, "filter", nil, `Filter expression (e.g. "is_active eq 1")`)
 	cmd.Flags().StringArrayVar(&sorts, "sort", nil, `Sort expression (e.g. "sort_order:ASC")`)
-	cmd.Flags().IntVar(&limit, "limit", 50, "Number of results per page")
+	cmd.Flags().IntVar(&limit, "limit", 50, "Number of results per page (1-10000)")
 	cmd.Flags().IntVar(&page, "page", 1, "Page number")
 	return cmd
 }
 
 func runCartRuleList(cmd *cobra.Command, f *cmdutil.Factory, filters, sorts []string, limit, page int) error {
-	ios, err := f.Streams()
-	if err != nil {
+	if err := cmdutil.ValidateLimit(limit); err != nil {
 		return err
 	}
 
-	_, ctx, host, err := cmdutil.ResolveContext(f, cmd, cmdutil.FlagValue(cmd, "context"))
-	if err != nil {
-		return err
-	}
-
-	client, err := cmdutil.NewMagentoClient(host, ctx.StoreCode)
+	ios, client, err := cmdutil.ClientFromCmd(f, cmd)
 	if err != nil {
 		return err
 	}
@@ -290,7 +268,7 @@ func runCartRuleList(cmd *cobra.Command, f *cmdutil.Factory, filters, sorts []st
 			coupon := r.CouponType
 			dates := formatDateRange(r.FromDate, r.ToDate)
 			_, _ = fmt.Fprintf(ios.Out, "%-5d  %-35s  %-12s  %-10.2f  %-7s  %-10s  %s\n",
-				r.RuleID, truncate(r.Name, 35), r.SimpleAction, r.DiscountAmount, active, coupon, dates)
+				r.RuleID, cmdutil.Truncate(r.Name, 35), r.SimpleAction, r.DiscountAmount, active, coupon, dates)
 		}
 		return nil
 	})
@@ -312,17 +290,7 @@ func newCartRuleViewCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func runCartRuleView(cmd *cobra.Command, f *cmdutil.Factory, id int) error {
-	ios, err := f.Streams()
-	if err != nil {
-		return err
-	}
-
-	_, ctx, host, err := cmdutil.ResolveContext(f, cmd, cmdutil.FlagValue(cmd, "context"))
-	if err != nil {
-		return err
-	}
-
-	client, err := cmdutil.NewMagentoClient(host, ctx.StoreCode)
+	ios, client, err := cmdutil.ClientFromCmd(f, cmd)
 	if err != nil {
 		return err
 	}
@@ -414,23 +382,17 @@ Examples:
 	}
 	cmd.Flags().StringArrayVar(&filters, "filter", nil, `Filter expression (e.g. "code like %SUMMER%")`)
 	cmd.Flags().StringArrayVar(&sorts, "sort", nil, `Sort expression (e.g. "code:ASC")`)
-	cmd.Flags().IntVar(&limit, "limit", 50, "Number of results per page")
+	cmd.Flags().IntVar(&limit, "limit", 50, "Number of results per page (1-10000)")
 	cmd.Flags().IntVar(&page, "page", 1, "Page number")
 	return cmd
 }
 
 func runCouponList(cmd *cobra.Command, f *cmdutil.Factory, filters, sorts []string, limit, page int) error {
-	ios, err := f.Streams()
-	if err != nil {
+	if err := cmdutil.ValidateLimit(limit); err != nil {
 		return err
 	}
 
-	_, ctx, host, err := cmdutil.ResolveContext(f, cmd, cmdutil.FlagValue(cmd, "context"))
-	if err != nil {
-		return err
-	}
-
-	client, err := cmdutil.NewMagentoClient(host, ctx.StoreCode)
+	ios, client, err := cmdutil.ClientFromCmd(f, cmd)
 	if err != nil {
 		return err
 	}
@@ -474,7 +436,7 @@ func runCouponList(cmd *cobra.Command, f *cmdutil.Factory, filters, sorts []stri
 				expires = c.ExpirationDate
 			}
 			_, _ = fmt.Fprintf(ios.Out, "%-5d  %-8d  %-25s  %-8d  %-10s  %s\n",
-				c.CouponID, c.RuleID, truncate(c.Code, 25), c.TimesUsed, usageLimit, expires)
+				c.CouponID, c.RuleID, cmdutil.Truncate(c.Code, 25), c.TimesUsed, usageLimit, expires)
 		}
 		return nil
 	})
@@ -496,17 +458,7 @@ func newCouponViewCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func runCouponView(cmd *cobra.Command, f *cmdutil.Factory, id int) error {
-	ios, err := f.Streams()
-	if err != nil {
-		return err
-	}
-
-	_, ctx, host, err := cmdutil.ResolveContext(f, cmd, cmdutil.FlagValue(cmd, "context"))
-	if err != nil {
-		return err
-	}
-
-	client, err := cmdutil.NewMagentoClient(host, ctx.StoreCode)
+	ios, client, err := cmdutil.ClientFromCmd(f, cmd)
 	if err != nil {
 		return err
 	}
@@ -545,13 +497,6 @@ func runCouponView(cmd *cobra.Command, f *cmdutil.Factory, id int) error {
 }
 
 // --- Helpers ---
-
-func truncate(s string, max int) string {
-	if len(s) <= max {
-		return s
-	}
-	return s[:max-3] + "..."
-}
 
 func formatDateRange(from, to string) string {
 	if from == "" && to == "" {

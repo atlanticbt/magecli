@@ -26,27 +26,11 @@ func newStatusCmd(f *cmdutil.Factory) *cobra.Command {
 			return runStatus(cmd, f, args[0])
 		},
 	}
-	cmd.Flags().String("store-code", "", "Override store code")
 	return cmd
 }
 
 func runStatus(cmd *cobra.Command, f *cmdutil.Factory, sku string) error {
-	ios, err := f.Streams()
-	if err != nil {
-		return err
-	}
-
-	_, ctx, host, err := cmdutil.ResolveContext(f, cmd, cmdutil.FlagValue(cmd, "context"))
-	if err != nil {
-		return err
-	}
-
-	storeCode := cmdutil.FlagValue(cmd, "store-code")
-	if storeCode == "" {
-		storeCode = ctx.StoreCode
-	}
-
-	client, err := cmdutil.NewMagentoClient(host, storeCode)
+	ios, client, err := cmdutil.ClientFromCmd(f, cmd)
 	if err != nil {
 		return err
 	}

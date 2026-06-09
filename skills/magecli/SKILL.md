@@ -51,10 +51,15 @@ Magento 2.3.2+ requires authentication for all REST endpoints.
 magecli auth login https://store.example.com --token <bearer-token>
 ```
 
-Or use environment variable:
+Or use an environment variable instead of the keyring (best for headless/CI
+agents). Bootstrap order matters — register the host *after* exporting the token:
 ```bash
 export MAGECLI_TOKEN=<bearer-token>
+magecli auth login https://store.example.com           # registers host, no token stored
+magecli context create production --host https://store.example.com --set-active
 ```
+With `MAGECLI_TOKEN` set, `context create` also accepts an unknown URL directly
+and registers it for you, so `auth login` is optional in that flow.
 
 3. Create a context (read-only by default):
 ```bash
@@ -118,6 +123,24 @@ magecli product list --limit 50 --page 2
 
 **Filter operators:** eq, neq, gt, gteq, lt, lteq, like, nlike, in, nin, null, notnull, from, to, finset
 
+**Bulk lookup** — fetch many SKUs/IDs in one request with the `in` operator (comma-separated, no spaces):
+```bash
+magecli product list --filter "sku in ABC-1,ABC-2,ABC-3" --json
+```
+
+**Page size:** list `--limit` defaults vary (product 20; cms/promo 50; attribute sets 100); values outside **1–10000** are rejected (exit 1). To fetch an entire result set in one call, pass `--limit 10000`; otherwise page with `--page`. `total_count` is always present in `--json` output for computing how many pages remain.
+
+## Token Efficiency
+
+Default `--json` payloads can be large — `product list`/`view` include the full `custom_attributes` block (HTML descriptions, meta fields, etc.). Trim responses to only the fields you need with `--fields` (maps to Magento's native `fields=` filter; requires `--json`, `--yaml`, or `--template`):
+
+```bash
+magecli product list --fields "sku,name,price" --json
+magecli product view ABC-123 --fields "sku,name,price,status" --json
+```
+
+CMS `list` commands omit page/block HTML bodies by default; retrieve a single body with `cms page view <id> --content`. When you only need a few fields, `--fields` plus `--jq` keeps output minimal.
+
 ## Output Modes
 
 ```bash
@@ -161,6 +184,28 @@ magecli api /V1/products -P "searchCriteria[pageSize]=5" --json
 # Write operations require --allow-writes on the context
 magecli api /V1/products -X POST -d '{"product": {...}}' --json
 ```
+
+## Error Recovery & Exit Codes
+
+Errors go to **stderr**; data goes to **stdout**. Always pass `--json` when you intend to parse output — default output is a human-readable table, not machine-parseable. Branch on the **exit code** rather than parsing error text:
+
+| Exit | Meaning | Typical fix |
+|------|---------|-------------|
+| 0 | Success | — |
+| 1 | Usage/input/config error | Check flags and args |
+| 2 | Network failure (DNS, refused, timeout) | Verify the host URL is reachable |
+| 3 | HTTP 404 — resource not found | The SKU/ID/path does not exist |
+| 4 | HTTP 401/403 — auth failure | `magecli auth login`; verify the Integration token's resource access |
+| 5 | Other HTTP error (4xx/5xx) | Inspect the message; check request params |
+| 8 | Operation pending | Retry later |
+
+Common pitfalls:
+- **401/403** usually means the Integration token lacks the required resource ACLs in Magento Admin > System > Integrations, not just a missing token.
+- **"no active context"** → run `magecli context use <name>` (or pass `--context`).
+- **"multiple hosts configured; specify --context"** → pass `--context <name>`.
+- **"no OS keychain backend available"** (headless/containers) → re-run with `--allow-insecure-store` or set `MAGECLI_ALLOW_INSECURE_STORE=1`, or use `MAGECLI_TOKEN`.
+- **`product view <sku>` of a missing SKU is an error (exit 3)**, not empty output — use it as an existence check.
+- `--store-code` is honored on every command (product, cms, promo, store, config, api, …).
 
 ## Environment Variables
 

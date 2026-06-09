@@ -57,13 +57,17 @@ in the OS keyring. Use MAGECLI_TOKEN env var to bypass the keyring.`,
 }
 
 func runLogin(cmd *cobra.Command, f *cmdutil.Factory, opts *loginOptions) error {
-	if secret.TokenFromEnv() != "" {
-		return fmt.Errorf("%s environment variable is set; token is externally managed", secret.EnvToken)
-	}
-
 	ios, err := f.Streams()
 	if err != nil {
 		return err
+	}
+
+	// When MAGECLI_TOKEN is set the token is externally managed: we only need to
+	// register the host so contexts can reference it. This makes headless
+	// bootstrap (export MAGECLI_TOKEN=...; auth login <url>) work.
+	envManaged := secret.TokenFromEnv() != ""
+	if envManaged && opts.Token != "" {
+		return fmt.Errorf("%s is set; remove --token or unset the environment variable", secret.EnvToken)
 	}
 
 	reader := bufio.NewReader(ios.In)
@@ -88,27 +92,29 @@ func runLogin(cmd *cobra.Command, f *cmdutil.Factory, opts *loginOptions) error 
 		return err
 	}
 
-	if opts.Token == "" {
-		if !isTerminal(ios.In) {
-			return fmt.Errorf("--token is required when not running in a TTY")
+	if !envManaged {
+		if opts.Token == "" {
+			if !isTerminal(ios.In) {
+				return fmt.Errorf("--token is required when not running in a TTY (or set %s)", secret.EnvToken)
+			}
+			opts.Token, err = promptSecret(ios, "Integration Bearer Token")
+			if err != nil {
+				return err
+			}
 		}
-		opts.Token, err = promptSecret(ios, "Integration Bearer Token")
-		if err != nil {
-			return err
-		}
-	}
 
-	// Store the token
-	storeOpts := []secret.Option{}
-	if opts.AllowInsecureStore {
-		storeOpts = append(storeOpts, secret.WithAllowFileFallback(true))
-	}
-	store, err := secret.Open(storeOpts...)
-	if err != nil {
-		return fmt.Errorf("store token: %w", err)
-	}
-	if err := store.Set(secret.TokenKey(hostKey), opts.Token); err != nil {
-		return fmt.Errorf("store token: %w", err)
+		// Store the token
+		storeOpts := []secret.Option{}
+		if opts.AllowInsecureStore {
+			storeOpts = append(storeOpts, secret.WithAllowFileFallback(true))
+		}
+		store, err := secret.Open(storeOpts...)
+		if err != nil {
+			return fmt.Errorf("store token: %w", err)
+		}
+		if err := store.Set(secret.TokenKey(hostKey), opts.Token); err != nil {
+			return fmt.Errorf("store token: %w", err)
+		}
 	}
 
 	cfg, err := f.ResolveConfig()
@@ -116,16 +122,28 @@ func runLogin(cmd *cobra.Command, f *cmdutil.Factory, opts *loginOptions) error 
 		return err
 	}
 
-	cfg.SetHost(hostKey, &config.Host{
-		BaseURL:            baseURL,
-		AllowInsecureStore: opts.AllowInsecureStore,
-	})
+	// Preserve existing host settings on re-login (notably a previously enabled
+	// allow_insecure_store, which the keyring fallback depends on);
+	// --allow-insecure-store only ever turns the fallback on.
+	host := &config.Host{BaseURL: baseURL}
+	if existing, err := cfg.Host(hostKey); err == nil && existing != nil {
+		*host = *existing
+		host.BaseURL = baseURL
+	}
+	if opts.AllowInsecureStore {
+		host.AllowInsecureStore = true
+	}
+	cfg.SetHost(hostKey, host)
 
 	if err := cfg.Save(); err != nil {
 		return err
 	}
 
-	_, _ = fmt.Fprintf(ios.Out, "Logged in to %s\n", baseURL)
+	if envManaged {
+		_, _ = fmt.Fprintf(ios.Out, "Registered %s (token provided via %s)\n", baseURL, secret.EnvToken)
+	} else {
+		_, _ = fmt.Fprintf(ios.Out, "Logged in to %s\n", baseURL)
+	}
 	return nil
 }
 
@@ -179,10 +197,10 @@ func runStatus(cmd *cobra.Command, f *cmdutil.Factory) error {
 
 	payload := struct {
 		ActiveContext string        `json:"active_context,omitempty"`
-		Hosts        []hostSummary `json:"hosts"`
+		Hosts         []hostSummary `json:"hosts"`
 	}{
 		ActiveContext: cfg.ActiveContext,
-		Hosts:        hosts,
+		Hosts:         hosts,
 	}
 
 	return cmdutil.WriteOutput(cmd, ios.Out, payload, func() error {

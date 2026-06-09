@@ -33,17 +33,7 @@ func newViewsCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func runViews(cmd *cobra.Command, f *cmdutil.Factory) error {
-	ios, err := f.Streams()
-	if err != nil {
-		return err
-	}
-
-	_, ctx, host, err := cmdutil.ResolveContext(f, cmd, cmdutil.FlagValue(cmd, "context"))
-	if err != nil {
-		return err
-	}
-
-	client, err := cmdutil.NewMagentoClient(host, ctx.StoreCode)
+	ios, client, err := cmdutil.ClientFromCmd(f, cmd)
 	if err != nil {
 		return err
 	}
@@ -70,7 +60,7 @@ func runViews(cmd *cobra.Command, f *cmdutil.Factory) error {
 				active = "no"
 			}
 			_, _ = fmt.Fprintf(ios.Out, "%-4d  %-15s  %-30s  %-10d  %-8d  %s\n",
-				v.ID, v.Code, truncate(v.Name, 30), v.WebsiteID, v.StoreGroupID, active)
+				v.ID, v.Code, cmdutil.Truncate(v.Name, 30), v.WebsiteID, v.StoreGroupID, active)
 		}
 		return nil
 	})
@@ -100,17 +90,7 @@ Examples:
 }
 
 func runConfig(cmd *cobra.Command, f *cmdutil.Factory, filterCode string) error {
-	ios, err := f.Streams()
-	if err != nil {
-		return err
-	}
-
-	_, ctx, host, err := cmdutil.ResolveContext(f, cmd, cmdutil.FlagValue(cmd, "context"))
-	if err != nil {
-		return err
-	}
-
-	client, err := cmdutil.NewMagentoClient(host, ctx.StoreCode)
+	ios, client, err := cmdutil.ClientFromCmd(f, cmd)
 	if err != nil {
 		return err
 	}
@@ -170,17 +150,7 @@ func newGroupsCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func runGroups(cmd *cobra.Command, f *cmdutil.Factory) error {
-	ios, err := f.Streams()
-	if err != nil {
-		return err
-	}
-
-	_, ctx, host, err := cmdutil.ResolveContext(f, cmd, cmdutil.FlagValue(cmd, "context"))
-	if err != nil {
-		return err
-	}
-
-	client, err := cmdutil.NewMagentoClient(host, ctx.StoreCode)
+	ios, client, err := cmdutil.ClientFromCmd(f, cmd)
 	if err != nil {
 		return err
 	}
@@ -200,7 +170,7 @@ func runGroups(cmd *cobra.Command, f *cmdutil.Factory) error {
 		_, _ = fmt.Fprintln(ios.Out, strings.Repeat("-", 75))
 		for _, g := range groups {
 			_, _ = fmt.Fprintf(ios.Out, "%-4d  %-15s  %-30s  %-10d  %-12d\n",
-				g.ID, g.Code, truncate(g.Name, 30), g.WebsiteID, g.RootCategoryID)
+				g.ID, g.Code, cmdutil.Truncate(g.Name, 30), g.WebsiteID, g.RootCategoryID)
 		}
 		return nil
 	})
@@ -217,17 +187,7 @@ func newWebsitesCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func runWebsites(cmd *cobra.Command, f *cmdutil.Factory) error {
-	ios, err := f.Streams()
-	if err != nil {
-		return err
-	}
-
-	_, ctx, host, err := cmdutil.ResolveContext(f, cmd, cmdutil.FlagValue(cmd, "context"))
-	if err != nil {
-		return err
-	}
-
-	client, err := cmdutil.NewMagentoClient(host, ctx.StoreCode)
+	ios, client, err := cmdutil.ClientFromCmd(f, cmd)
 	if err != nil {
 		return err
 	}
@@ -247,15 +207,8 @@ func runWebsites(cmd *cobra.Command, f *cmdutil.Factory) error {
 		_, _ = fmt.Fprintln(ios.Out, strings.Repeat("-", 65))
 		for _, w := range websites {
 			_, _ = fmt.Fprintf(ios.Out, "%-4d  %-15s  %-30s  %d\n",
-				w.ID, w.Code, truncate(w.Name, 30), w.DefaultGroupID)
+				w.ID, w.Code, cmdutil.Truncate(w.Name, 30), w.DefaultGroupID)
 		}
 		return nil
 	})
-}
-
-func truncate(s string, max int) string {
-	if len(s) <= max {
-		return s
-	}
-	return s[:max-3] + "..."
 }
