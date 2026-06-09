@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -134,10 +135,15 @@ func (c *Client) NewRequest(ctx context.Context, method, path string, body any) 
 	u := *c.baseURL
 	basePath := c.baseURL.Path
 	if strings.HasPrefix(path, "/") && basePath != "" {
+		// Preserve the escaped form (RawPath) so that percent-encoded segments
+		// — e.g. a SKU containing "/" encoded as %2F — survive instead of being
+		// decoded back into path separators.
 		if strings.HasPrefix(rel.Path, basePath) {
 			u.Path = rel.Path
+			u.RawPath = rel.EscapedPath()
 		} else {
 			u.Path = strings.TrimSuffix(basePath, "/") + rel.Path
+			u.RawPath = strings.TrimSuffix(c.baseURL.EscapedPath(), "/") + rel.EscapedPath()
 		}
 	} else {
 		resolved := c.baseURL.ResolveReference(rel)
@@ -174,12 +180,36 @@ func (c *Client) NewRequest(ctx context.Context, method, path string, body any) 
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", c.userAgent)
 
-	// Bearer token authentication for Magento 2
-	if c.token != "" {
+	// Bearer token authentication for Magento 2. Pin the credential to the
+	// configured host so it is never attached to an unrelated absolute URL
+	// (e.g. `api https://attacker.example/...`), which would leak the token.
+	if c.token != "" && sameHost(&u, c.baseURL) {
 		req.Header.Set("Authorization", "Bearer "+c.token)
 	}
 
 	return req, nil
+}
+
+// sameHost reports whether two URLs target the same scheme, host, and port,
+// treating an absent port as the scheme's default so that an explicit :443
+// (or :80) still matches a base URL without one.
+func sameHost(a, b *url.URL) bool {
+	return strings.EqualFold(a.Scheme, b.Scheme) &&
+		strings.EqualFold(a.Hostname(), b.Hostname()) &&
+		effectivePort(a) == effectivePort(b)
+}
+
+func effectivePort(u *url.URL) string {
+	if p := u.Port(); p != "" {
+		return p
+	}
+	switch strings.ToLower(u.Scheme) {
+	case "https":
+		return "443"
+	case "http":
+		return "80"
+	}
+	return ""
 }
 
 func (c *Client) Do(req *http.Request, v any) error {
@@ -206,7 +236,7 @@ func (c *Client) Do(req *http.Request, v any) error {
 
 		resp, err := c.httpClient.Do(attemptReq)
 		if err != nil {
-			if !c.shouldRetry(attempts) {
+			if !isIdempotent(req.Method) || !c.shouldRetry(attempts) {
 				if c.debug {
 					fmt.Fprintf(os.Stderr, "<-- network error: %v\n", err)
 				}
@@ -232,7 +262,7 @@ func (c *Client) Do(req *http.Request, v any) error {
 			return c.applyCachedResponse(attemptReq, v)
 		}
 
-		if shouldRetryStatus(resp.StatusCode) {
+		if shouldRetryStatus(resp.StatusCode) && isIdempotent(req.Method) {
 			bodyBytes, _ := io.ReadAll(resp.Body)
 			_ = resp.Body.Close()
 			if !c.shouldRetry(attempts) {
@@ -293,27 +323,78 @@ func (c *Client) Do(req *http.Request, v any) error {
 	}
 }
 
+// HTTPError represents a non-2xx HTTP response. It carries the status code so
+// that the top-level command runner can map failures to distinct exit codes
+// (e.g. 404 vs 401) and emit targeted remediation hints.
+type HTTPError struct {
+	StatusCode int
+	Status     string
+	Message    string
+}
+
+func (e *HTTPError) Error() string {
+	if e.Message != "" {
+		return fmt.Sprintf("%s: %s", e.Status, e.Message)
+	}
+	return e.Status
+}
+
 func decodeError(resp *http.Response) error {
+	herr := &HTTPError{StatusCode: resp.StatusCode, Status: resp.Status}
+
 	data, err := io.ReadAll(resp.Body)
 	if err != nil || len(data) == 0 {
-		return fmt.Errorf("%s", resp.Status)
+		return herr
 	}
 
-	// Magento 2 error format: {"message": "...", "parameters": [...]}
+	// Magento 2 error format: {"message": "...", "parameters": [...] | {...}}
 	var magentoErr struct {
-		Message    string   `json:"message"`
-		Parameters []string `json:"parameters"`
+		Message    string          `json:"message"`
+		Parameters json.RawMessage `json:"parameters"`
 	}
 	if json.Unmarshal(data, &magentoErr) == nil && magentoErr.Message != "" {
-		msg := magentoErr.Message
-		for i, param := range magentoErr.Parameters {
-			placeholder := fmt.Sprintf("%%%d", i+1)
-			msg = strings.ReplaceAll(msg, placeholder, param)
-		}
-		return fmt.Errorf("%s: %s", resp.Status, msg)
+		herr.Message = substituteParams(magentoErr.Message, magentoErr.Parameters)
+		return herr
 	}
 
-	return fmt.Errorf("%s: %s", resp.Status, strings.TrimSpace(string(data)))
+	herr.Message = strings.TrimSpace(string(data))
+	return herr
+}
+
+// substituteParams resolves Magento error placeholders. Magento returns
+// parameters either positionally (["a","b"] → %1, %2) or as a named map
+// ({"resources":"x"} → %resources); handle both.
+func substituteParams(msg string, raw json.RawMessage) string {
+	if len(raw) == 0 {
+		return msg
+	}
+
+	// Named parameters: {"key": "value"}. Replace longer keys first so a key
+	// that is a prefix of another ("%field" vs "%fieldName") cannot clobber it;
+	// map iteration order would make the corruption nondeterministic.
+	var named map[string]any
+	if json.Unmarshal(raw, &named) == nil && len(named) > 0 {
+		keys := make([]string, 0, len(named))
+		for key := range named {
+			keys = append(keys, key)
+		}
+		sort.Slice(keys, func(i, j int) bool { return len(keys[i]) > len(keys[j]) })
+		for _, key := range keys {
+			msg = strings.ReplaceAll(msg, "%"+key, fmt.Sprintf("%v", named[key]))
+		}
+		return msg
+	}
+
+	// Positional parameters: ["a", "b"]. Replace from the highest index down so
+	// that "%1" does not clobber the "%1" prefix of "%10".
+	var positional []any
+	if json.Unmarshal(raw, &positional) == nil {
+		for i := len(positional) - 1; i >= 0; i-- {
+			placeholder := fmt.Sprintf("%%%d", i+1)
+			msg = strings.ReplaceAll(msg, placeholder, fmt.Sprintf("%v", positional[i]))
+		}
+	}
+	return msg
 }
 
 func cloneRequest(req *http.Request) (*http.Request, error) {
@@ -334,6 +415,14 @@ func cloneRequest(req *http.Request) (*http.Request, error) {
 
 func shouldRetryStatus(code int) bool {
 	return code == http.StatusTooManyRequests || (code >= 500 && code <= 599)
+}
+
+// isIdempotent reports whether a request method is safe to retry automatically.
+// Only GET/HEAD are retried so that a non-idempotent write (POST/PUT/DELETE via
+// the `api` command) is never silently replayed after a 5xx or network error.
+func isIdempotent(method string) bool {
+	m := strings.ToUpper(method)
+	return m == http.MethodGet || m == http.MethodHead
 }
 
 func (c *Client) shouldRetry(attempts int) bool {

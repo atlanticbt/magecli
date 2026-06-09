@@ -26,11 +26,11 @@ func NewCmdProduct(f *cmdutil.Factory) *cobra.Command {
 }
 
 type listOptions struct {
-	Filters   []string
-	Sort      []string
-	Limit     int
-	Page      int
-	StoreCode string
+	Filters []string
+	Sort    []string
+	Limit   int
+	Page    int
+	Fields  string
 }
 
 func newListCmd(f *cmdutil.Factory) *cobra.Command {
@@ -43,36 +43,29 @@ func newListCmd(f *cmdutil.Factory) *cobra.Command {
 Examples:
   magecli product list --filter "name like %shirt%"
   magecli product list --filter "price gt 50" --sort "price:ASC" --limit 10
-  magecli product list --filter "status eq 1" --json`,
+  magecli product list --filter "status eq 1" --json
+  magecli product list --fields "sku,name,price" --json    # smaller payload`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runList(cmd, f, opts)
 		},
 	}
 	cmd.Flags().StringArrayVar(&opts.Filters, "filter", nil, `Filter expression (e.g. "name like %shirt%")`)
 	cmd.Flags().StringArrayVar(&opts.Sort, "sort", nil, `Sort expression (e.g. "price:ASC")`)
-	cmd.Flags().IntVar(&opts.Limit, "limit", 20, "Number of results per page")
+	cmd.Flags().IntVar(&opts.Limit, "limit", 20, "Number of results per page (1-10000)")
 	cmd.Flags().IntVar(&opts.Page, "page", 1, "Page number")
-	cmd.Flags().StringVar(&opts.StoreCode, "store-code", "", "Override store code")
+	cmd.Flags().StringVar(&opts.Fields, "fields", "", `Comma-separated item fields to return (e.g. "sku,name,price")`)
 	return cmd
 }
 
 func runList(cmd *cobra.Command, f *cmdutil.Factory, opts *listOptions) error {
-	ios, err := f.Streams()
-	if err != nil {
+	if err := cmdutil.ValidateLimit(opts.Limit); err != nil {
+		return err
+	}
+	if err := validateFields(cmd, opts.Fields); err != nil {
 		return err
 	}
 
-	_, ctx, host, err := cmdutil.ResolveContext(f, cmd, cmdutil.FlagValue(cmd, "context"))
-	if err != nil {
-		return err
-	}
-
-	storeCode := cmdutil.FlagValue(cmd, "store-code")
-	if storeCode == "" {
-		storeCode = ctx.StoreCode
-	}
-
-	client, err := cmdutil.NewMagentoClient(host, storeCode)
+	ios, client, err := cmdutil.ClientFromCmd(f, cmd)
 	if err != nil {
 		return err
 	}
@@ -80,6 +73,7 @@ func runList(cmd *cobra.Command, f *cmdutil.Factory, opts *listOptions) error {
 	search := magento.NewSearch()
 	search.SetPageSize(opts.Limit)
 	search.SetCurrentPage(opts.Page)
+	search.SetFields(opts.Fields)
 
 	for _, expr := range opts.Filters {
 		if err := search.AddFilter(expr); err != nil {
@@ -115,47 +109,42 @@ func runList(cmd *cobra.Command, f *cmdutil.Factory, opts *listOptions) error {
 				status = "disabled"
 			}
 			_, _ = fmt.Fprintf(ios.Out, "%-20s  %-40s  %10.2f  %-14s  %s\n",
-				truncate(p.SKU, 20), truncate(p.Name, 40), p.Price, p.TypeID, status)
+				cmdutil.Truncate(p.SKU, 20), cmdutil.Truncate(p.Name, 40), p.Price, p.TypeID, status)
 		}
 		return nil
 	})
 }
 
 func newViewCmd(f *cmdutil.Factory) *cobra.Command {
+	var fields string
 	cmd := &cobra.Command{
 		Use:   "view <sku>",
 		Short: "View a product by SKU",
-		Args:  cobra.ExactArgs(1),
+		Long: `View a single product by SKU.
+
+Examples:
+  magecli product view ABC-123 --json
+  magecli product view ABC-123 --fields "sku,name,price" --json`,
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runView(cmd, f, args[0])
+			return runView(cmd, f, args[0], fields)
 		},
 	}
-	cmd.Flags().String("store-code", "", "Override store code")
+	cmd.Flags().StringVar(&fields, "fields", "", `Comma-separated fields to return (e.g. "sku,name,price")`)
 	return cmd
 }
 
-func runView(cmd *cobra.Command, f *cmdutil.Factory, sku string) error {
-	ios, err := f.Streams()
+func runView(cmd *cobra.Command, f *cmdutil.Factory, sku, fields string) error {
+	if err := validateFields(cmd, fields); err != nil {
+		return err
+	}
+
+	ios, client, err := cmdutil.ClientFromCmd(f, cmd)
 	if err != nil {
 		return err
 	}
 
-	_, ctx, host, err := cmdutil.ResolveContext(f, cmd, cmdutil.FlagValue(cmd, "context"))
-	if err != nil {
-		return err
-	}
-
-	storeCode := cmdutil.FlagValue(cmd, "store-code")
-	if storeCode == "" {
-		storeCode = ctx.StoreCode
-	}
-
-	client, err := cmdutil.NewMagentoClient(host, storeCode)
-	if err != nil {
-		return err
-	}
-
-	product, err := client.GetProduct(cmd.Context(), sku)
+	product, err := client.GetProduct(cmd.Context(), sku, fields)
 	if err != nil {
 		return err
 	}
@@ -196,27 +185,11 @@ func newMediaCmd(f *cmdutil.Factory) *cobra.Command {
 			return runMedia(cmd, f, args[0])
 		},
 	}
-	cmd.Flags().String("store-code", "", "Override store code")
 	return cmd
 }
 
 func runMedia(cmd *cobra.Command, f *cmdutil.Factory, sku string) error {
-	ios, err := f.Streams()
-	if err != nil {
-		return err
-	}
-
-	_, ctx, host, err := cmdutil.ResolveContext(f, cmd, cmdutil.FlagValue(cmd, "context"))
-	if err != nil {
-		return err
-	}
-
-	storeCode := cmdutil.FlagValue(cmd, "store-code")
-	if storeCode == "" {
-		storeCode = ctx.StoreCode
-	}
-
-	client, err := cmdutil.NewMagentoClient(host, storeCode)
+	ios, client, err := cmdutil.ClientFromCmd(f, cmd)
 	if err != nil {
 		return err
 	}
@@ -251,27 +224,11 @@ func newChildrenCmd(f *cmdutil.Factory) *cobra.Command {
 			return runChildren(cmd, f, args[0])
 		},
 	}
-	cmd.Flags().String("store-code", "", "Override store code")
 	return cmd
 }
 
 func runChildren(cmd *cobra.Command, f *cmdutil.Factory, sku string) error {
-	ios, err := f.Streams()
-	if err != nil {
-		return err
-	}
-
-	_, ctx, host, err := cmdutil.ResolveContext(f, cmd, cmdutil.FlagValue(cmd, "context"))
-	if err != nil {
-		return err
-	}
-
-	storeCode := cmdutil.FlagValue(cmd, "store-code")
-	if storeCode == "" {
-		storeCode = ctx.StoreCode
-	}
-
-	client, err := cmdutil.NewMagentoClient(host, storeCode)
+	ios, client, err := cmdutil.ClientFromCmd(f, cmd)
 	if err != nil {
 		return err
 	}
@@ -303,27 +260,11 @@ func newOptionsCmd(f *cmdutil.Factory) *cobra.Command {
 			return runOptions(cmd, f, args[0])
 		},
 	}
-	cmd.Flags().String("store-code", "", "Override store code")
 	return cmd
 }
 
 func runOptions(cmd *cobra.Command, f *cmdutil.Factory, sku string) error {
-	ios, err := f.Streams()
-	if err != nil {
-		return err
-	}
-
-	_, ctx, host, err := cmdutil.ResolveContext(f, cmd, cmdutil.FlagValue(cmd, "context"))
-	if err != nil {
-		return err
-	}
-
-	storeCode := cmdutil.FlagValue(cmd, "store-code")
-	if storeCode == "" {
-		storeCode = ctx.StoreCode
-	}
-
-	client, err := cmdutil.NewMagentoClient(host, storeCode)
+	ios, client, err := cmdutil.ClientFromCmd(f, cmd)
 	if err != nil {
 		return err
 	}
@@ -350,8 +291,9 @@ func runOptions(cmd *cobra.Command, f *cmdutil.Factory, sku string) error {
 }
 
 func newSearchCmd(f *cmdutil.Factory) *cobra.Command {
-	var limit int
+	var limit, page int
 	var sort []string
+	var fields string
 
 	cmd := &cobra.Command{
 		Use:   "search <term>",
@@ -359,43 +301,38 @@ func newSearchCmd(f *cmdutil.Factory) *cobra.Command {
 		Long: `Search products by name. Shortcut for: product list --filter "name like %term%"
 
 Examples:
-  magecli product search glock
-  magecli product search "body armor" --limit 10
-  magecli product search holster --json --jq '.items[].sku'`,
+  magecli product search shirt
+  magecli product search "blue widget" --limit 10
+  magecli product search hat --json --jq '.items[].sku'`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runSearch(cmd, f, args[0], limit, sort)
+			return runSearch(cmd, f, args[0], limit, page, sort, fields)
 		},
 	}
-	cmd.Flags().IntVar(&limit, "limit", 20, "Number of results")
+	cmd.Flags().IntVar(&limit, "limit", 20, "Number of results per page (1-10000)")
+	cmd.Flags().IntVar(&page, "page", 1, "Page number")
 	cmd.Flags().StringArrayVar(&sort, "sort", nil, `Sort expression (e.g. "price:ASC")`)
-	cmd.Flags().String("store-code", "", "Override store code")
+	cmd.Flags().StringVar(&fields, "fields", "", `Comma-separated item fields to return (e.g. "sku,name,price")`)
 	return cmd
 }
 
-func runSearch(cmd *cobra.Command, f *cmdutil.Factory, term string, limit int, sortExprs []string) error {
-	ios, err := f.Streams()
-	if err != nil {
+func runSearch(cmd *cobra.Command, f *cmdutil.Factory, term string, limit, page int, sortExprs []string, fields string) error {
+	if err := cmdutil.ValidateLimit(limit); err != nil {
+		return err
+	}
+	if err := validateFields(cmd, fields); err != nil {
 		return err
 	}
 
-	_, ctx, host, err := cmdutil.ResolveContext(f, cmd, cmdutil.FlagValue(cmd, "context"))
-	if err != nil {
-		return err
-	}
-
-	storeCode := cmdutil.FlagValue(cmd, "store-code")
-	if storeCode == "" {
-		storeCode = ctx.StoreCode
-	}
-
-	client, err := cmdutil.NewMagentoClient(host, storeCode)
+	ios, client, err := cmdutil.ClientFromCmd(f, cmd)
 	if err != nil {
 		return err
 	}
 
 	search := magento.NewSearch()
 	search.SetPageSize(limit)
+	search.SetCurrentPage(page)
+	search.SetFields(fields)
 	if err := search.AddFilter(fmt.Sprintf("name like %%%s%%", term)); err != nil {
 		return err
 	}
@@ -427,7 +364,7 @@ func runSearch(cmd *cobra.Command, f *cmdutil.Factory, term string, limit int, s
 				status = "disabled"
 			}
 			_, _ = fmt.Fprintf(ios.Out, "%-20s  %-40s  %10.2f  %-14s  %s\n",
-				truncate(p.SKU, 20), truncate(p.Name, 40), p.Price, p.TypeID, status)
+				cmdutil.Truncate(p.SKU, 20), cmdutil.Truncate(p.Name, 40), p.Price, p.TypeID, status)
 		}
 		return nil
 	})
@@ -440,34 +377,18 @@ func newURLCmd(f *cmdutil.Factory) *cobra.Command {
 		Long: `Look up which product has a given URL key.
 
 Examples:
-  magecli product url glock-17-gen5
-  magecli product url "hatch-g3-giant-swat-bag" --json`,
+  magecli product url blue-widget
+  magecli product url "large-canvas-bag" --json`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runURL(cmd, f, args[0])
 		},
 	}
-	cmd.Flags().String("store-code", "", "Override store code")
 	return cmd
 }
 
 func runURL(cmd *cobra.Command, f *cmdutil.Factory, urlKey string) error {
-	ios, err := f.Streams()
-	if err != nil {
-		return err
-	}
-
-	_, ctx, host, err := cmdutil.ResolveContext(f, cmd, cmdutil.FlagValue(cmd, "context"))
-	if err != nil {
-		return err
-	}
-
-	storeCode := cmdutil.FlagValue(cmd, "store-code")
-	if storeCode == "" {
-		storeCode = ctx.StoreCode
-	}
-
-	client, err := cmdutil.NewMagentoClient(host, storeCode)
+	ios, client, err := cmdutil.ClientFromCmd(f, cmd)
 	if err != nil {
 		return err
 	}
@@ -505,9 +426,12 @@ func runURL(cmd *cobra.Command, f *cmdutil.Factory, urlKey string) error {
 	})
 }
 
-func truncate(s string, max int) string {
-	if len(s) <= max {
-		return s
+// validateFields rejects --fields with table output: the server omits the
+// unrequested fields, so the table would render them as fabricated zero
+// values (price 0.00, status "disabled").
+func validateFields(cmd *cobra.Command, fields string) error {
+	if fields != "" && !cmdutil.StructuredOutputRequested(cmd) {
+		return fmt.Errorf("--fields requires --json, --yaml, or --template output")
 	}
-	return s[:max-3] + "..."
+	return nil
 }

@@ -50,6 +50,16 @@ func ResolveOutputSettings(cmd *cobra.Command) (OutputSettings, error) {
 	return OutputSettings{Format: f, JQ: jqExpr, Template: tmpl}, nil
 }
 
+// StructuredOutputRequested reports whether the user selected a structured
+// output mode (--json, --yaml, or --template) for this command.
+func StructuredOutputRequested(cmd *cobra.Command) bool {
+	settings, err := ResolveOutputSettings(cmd)
+	if err != nil {
+		return false
+	}
+	return settings.Format != "" || settings.Template != ""
+}
+
 func WriteOutput(cmd *cobra.Command, w io.Writer, data any, fallback func() error) error {
 	settings, err := ResolveOutputSettings(cmd)
 	if err != nil {

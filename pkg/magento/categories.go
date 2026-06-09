@@ -50,7 +50,7 @@ func (c *Client) GetCategoryProducts(ctx context.Context, categoryID int) ([]Cat
 
 // CategoryProduct represents a product assignment within a category.
 type CategoryProduct struct {
-	SKU            string `json:"sku"`
-	Position       int    `json:"position"`
-	CategoryID     string `json:"category_id"`
+	SKU        string `json:"sku"`
+	Position   int    `json:"position"`
+	CategoryID string `json:"category_id"`
 }

@@ -66,9 +66,9 @@ func (p *systemPager) Stop() error {
 
 type noop struct{}
 
-func (noop) Enabled() bool                        { return false }
-func (noop) Start() (io.WriteCloser, error)        { return nopWriteCloser{Writer: os.Stdout}, nil }
-func (noop) Stop() error                           { return nil }
+func (noop) Enabled() bool                  { return false }
+func (noop) Start() (io.WriteCloser, error) { return nopWriteCloser{Writer: os.Stdout}, nil }
+func (noop) Stop() error                    { return nil }
 
 type nopWriteCloser struct{ io.Writer }
 

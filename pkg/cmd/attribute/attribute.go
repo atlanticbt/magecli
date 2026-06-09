@@ -29,27 +29,11 @@ func newViewCmd(f *cmdutil.Factory) *cobra.Command {
 			return runView(cmd, f, args[0])
 		},
 	}
-	cmd.Flags().String("store-code", "", "Override store code")
 	return cmd
 }
 
 func runView(cmd *cobra.Command, f *cmdutil.Factory, code string) error {
-	ios, err := f.Streams()
-	if err != nil {
-		return err
-	}
-
-	_, ctx, host, err := cmdutil.ResolveContext(f, cmd, cmdutil.FlagValue(cmd, "context"))
-	if err != nil {
-		return err
-	}
-
-	storeCode := cmdutil.FlagValue(cmd, "store-code")
-	if storeCode == "" {
-		storeCode = ctx.StoreCode
-	}
-
-	client, err := cmdutil.NewMagentoClient(host, storeCode)
+	ios, client, err := cmdutil.ClientFromCmd(f, cmd)
 	if err != nil {
 		return err
 	}
@@ -87,27 +71,11 @@ func newOptionsCmd(f *cmdutil.Factory) *cobra.Command {
 			return runOptions(cmd, f, args[0])
 		},
 	}
-	cmd.Flags().String("store-code", "", "Override store code")
 	return cmd
 }
 
 func runOptions(cmd *cobra.Command, f *cmdutil.Factory, code string) error {
-	ios, err := f.Streams()
-	if err != nil {
-		return err
-	}
-
-	_, ctx, host, err := cmdutil.ResolveContext(f, cmd, cmdutil.FlagValue(cmd, "context"))
-	if err != nil {
-		return err
-	}
-
-	storeCode := cmdutil.FlagValue(cmd, "store-code")
-	if storeCode == "" {
-		storeCode = ctx.StoreCode
-	}
-
-	client, err := cmdutil.NewMagentoClient(host, storeCode)
+	ios, client, err := cmdutil.ClientFromCmd(f, cmd)
 	if err != nil {
 		return err
 	}
@@ -135,42 +103,39 @@ func runOptions(cmd *cobra.Command, f *cmdutil.Factory, code string) error {
 
 func newSetsCmd(f *cmdutil.Factory) *cobra.Command {
 	var filters []string
+	var limit, page int
 
 	cmd := &cobra.Command{
 		Use:   "sets",
 		Short: "List attribute sets",
+		Long: `List attribute sets with optional filtering and pagination.
+
+Examples:
+  magecli attribute sets
+  magecli attribute sets --filter "attribute_set_name like %Default%" --json`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runSets(cmd, f, filters)
+			return runSets(cmd, f, filters, limit, page)
 		},
 	}
 	cmd.Flags().StringArrayVar(&filters, "filter", nil, `Filter expression (e.g. "attribute_set_name like %Default%")`)
-	cmd.Flags().String("store-code", "", "Override store code")
+	cmd.Flags().IntVar(&limit, "limit", 100, "Number of results per page (1-10000)")
+	cmd.Flags().IntVar(&page, "page", 1, "Page number")
 	return cmd
 }
 
-func runSets(cmd *cobra.Command, f *cmdutil.Factory, filters []string) error {
-	ios, err := f.Streams()
-	if err != nil {
+func runSets(cmd *cobra.Command, f *cmdutil.Factory, filters []string, limit, page int) error {
+	if err := cmdutil.ValidateLimit(limit); err != nil {
 		return err
 	}
 
-	_, ctx, host, err := cmdutil.ResolveContext(f, cmd, cmdutil.FlagValue(cmd, "context"))
-	if err != nil {
-		return err
-	}
-
-	storeCode := cmdutil.FlagValue(cmd, "store-code")
-	if storeCode == "" {
-		storeCode = ctx.StoreCode
-	}
-
-	client, err := cmdutil.NewMagentoClient(host, storeCode)
+	ios, client, err := cmdutil.ClientFromCmd(f, cmd)
 	if err != nil {
 		return err
 	}
 
 	search := magento.NewSearch()
-	search.SetPageSize(100)
+	search.SetPageSize(limit)
+	search.SetCurrentPage(page)
 	for _, expr := range filters {
 		if err := search.AddFilter(expr); err != nil {
 			return fmt.Errorf("invalid filter: %w", err)

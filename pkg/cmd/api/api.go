@@ -86,7 +86,7 @@ func runAPI(cmd *cobra.Command, f *cmdutil.Factory, opts *apiOptions, path strin
 		return fmt.Errorf("write operations (%s) are not allowed on this context; recreate with --allow-writes or use a context that permits writes", method)
 	}
 
-	httpClient, err := cmdutil.NewHTTPClient(host, ctx.StoreCode)
+	httpClient, err := cmdutil.NewHTTPClient(host, cmdutil.StoreCodeFromCmd(cmd, ctx))
 	if err != nil {
 		return err
 	}

@@ -35,16 +35,16 @@ func TestListCatalogRules(t *testing.T) {
 func TestGetCatalogRule(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(CatalogRule{
-			RuleID:          1,
-			Name:            "Summer Sale",
-			Description:     "20% off summer items",
-			IsActive:        true,
-			SimpleAction:    "by_percent",
-			DiscountAmount:  20,
-			FromDate:        "2026-06-01",
-			ToDate:          "2026-08-31",
+			RuleID:           1,
+			Name:             "Summer Sale",
+			Description:      "20% off summer items",
+			IsActive:         true,
+			SimpleAction:     "by_percent",
+			DiscountAmount:   20,
+			FromDate:         "2026-06-01",
+			ToDate:           "2026-08-31",
 			CustomerGroupIDs: []int{0, 1},
-			WebsiteIDs:      []int{1},
+			WebsiteIDs:       []int{1},
 		})
 	}))
 	defer srv.Close()
@@ -102,21 +102,21 @@ func TestListCartRules(t *testing.T) {
 func TestGetCartRule(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(CartRule{
-			RuleID:          5,
-			Name:            "Buy 3 Get 1 Free",
-			IsActive:        true,
-			SimpleAction:    "buy_x_get_y",
-			DiscountAmount:  1,
-			DiscountStep:    3,
-			CouponType:      "SPECIFIC_COUPON",
-			UsesPerCoupon:   100,
-			UsesPerCustomer: 1,
-			TimesUsed:       42,
-			ApplyToShipping: false,
-			FromDate:        "2026-01-01",
-			ToDate:          "2026-12-31",
+			RuleID:           5,
+			Name:             "Buy 3 Get 1 Free",
+			IsActive:         true,
+			SimpleAction:     "buy_x_get_y",
+			DiscountAmount:   1,
+			DiscountStep:     3,
+			CouponType:       "SPECIFIC_COUPON",
+			UsesPerCoupon:    100,
+			UsesPerCustomer:  1,
+			TimesUsed:        42,
+			ApplyToShipping:  false,
+			FromDate:         "2026-01-01",
+			ToDate:           "2026-12-31",
 			CustomerGroupIDs: []int{1},
-			WebsiteIDs:      []int{1},
+			WebsiteIDs:       []int{1},
 		})
 	}))
 	defer srv.Close()
@@ -168,15 +168,15 @@ func TestListCoupons(t *testing.T) {
 func TestGetCoupon(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(Coupon{
-			CouponID:        1,
-			RuleID:          5,
-			Code:            "SUMMER20",
-			UsageLimit:      100,
+			CouponID:         1,
+			RuleID:           5,
+			Code:             "SUMMER20",
+			UsageLimit:       100,
 			UsagePerCustomer: 1,
-			TimesUsed:       42,
-			IsPrimary:       true,
-			CreatedAt:       "2026-01-15 10:00:00",
-			ExpirationDate:  "2026-12-31 23:59:59",
+			TimesUsed:        42,
+			IsPrimary:        true,
+			CreatedAt:        "2026-01-15 10:00:00",
+			ExpirationDate:   "2026-12-31 23:59:59",
 		})
 	}))
 	defer srv.Close()

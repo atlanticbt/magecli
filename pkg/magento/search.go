@@ -12,6 +12,7 @@ type SearchCriteria struct {
 	sortOrders   []sortOrder
 	pageSize     int
 	currentPage  int
+	fields       string
 }
 
 type filterGroup struct {
@@ -87,6 +88,14 @@ func (s *SearchCriteria) SetCurrentPage(page int) {
 	}
 }
 
+// SetFields restricts the response to the given comma-separated item fields
+// (e.g. "sku,name,price"). It maps to Magento's native `fields=` response
+// filter, dramatically shrinking payloads — most usefully by omitting the bulky
+// custom_attributes block. total_count is always retained for pagination.
+func (s *SearchCriteria) SetFields(fields string) {
+	s.fields = strings.TrimSpace(fields)
+}
+
 // Encode returns the search criteria as URL query parameters.
 func (s *SearchCriteria) Encode() string {
 	params := url.Values{}
@@ -108,6 +117,10 @@ func (s *SearchCriteria) Encode() string {
 
 	params.Set("searchCriteria[pageSize]", fmt.Sprintf("%d", s.pageSize))
 	params.Set("searchCriteria[currentPage]", fmt.Sprintf("%d", s.currentPage))
+
+	if s.fields != "" {
+		params.Set("fields", "items["+s.fields+"],total_count")
+	}
 
 	return params.Encode()
 }

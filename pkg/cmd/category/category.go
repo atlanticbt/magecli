@@ -34,28 +34,12 @@ func newTreeCmd(f *cmdutil.Factory) *cobra.Command {
 		},
 	}
 	cmd.Flags().IntVar(&rootID, "root", 0, "Root category ID")
-	cmd.Flags().IntVar(&depth, "depth", 0, "Maximum depth to display")
-	cmd.Flags().String("store-code", "", "Override store code")
+	cmd.Flags().IntVar(&depth, "depth", 0, "Maximum depth to display (0 = unlimited)")
 	return cmd
 }
 
 func runTree(cmd *cobra.Command, f *cmdutil.Factory, rootID, depth int) error {
-	ios, err := f.Streams()
-	if err != nil {
-		return err
-	}
-
-	_, ctx, host, err := cmdutil.ResolveContext(f, cmd, cmdutil.FlagValue(cmd, "context"))
-	if err != nil {
-		return err
-	}
-
-	storeCode := cmdutil.FlagValue(cmd, "store-code")
-	if storeCode == "" {
-		storeCode = ctx.StoreCode
-	}
-
-	client, err := cmdutil.NewMagentoClient(host, storeCode)
+	ios, client, err := cmdutil.ClientFromCmd(f, cmd)
 	if err != nil {
 		return err
 	}
@@ -99,27 +83,11 @@ func newViewCmd(f *cmdutil.Factory) *cobra.Command {
 			return runView(cmd, f, id)
 		},
 	}
-	cmd.Flags().String("store-code", "", "Override store code")
 	return cmd
 }
 
 func runView(cmd *cobra.Command, f *cmdutil.Factory, id int) error {
-	ios, err := f.Streams()
-	if err != nil {
-		return err
-	}
-
-	_, ctx, host, err := cmdutil.ResolveContext(f, cmd, cmdutil.FlagValue(cmd, "context"))
-	if err != nil {
-		return err
-	}
-
-	storeCode := cmdutil.FlagValue(cmd, "store-code")
-	if storeCode == "" {
-		storeCode = ctx.StoreCode
-	}
-
-	client, err := cmdutil.NewMagentoClient(host, storeCode)
+	ios, client, err := cmdutil.ClientFromCmd(f, cmd)
 	if err != nil {
 		return err
 	}
@@ -154,27 +122,11 @@ func newProductsCmd(f *cmdutil.Factory) *cobra.Command {
 			return runProducts(cmd, f, id)
 		},
 	}
-	cmd.Flags().String("store-code", "", "Override store code")
 	return cmd
 }
 
 func runProducts(cmd *cobra.Command, f *cmdutil.Factory, id int) error {
-	ios, err := f.Streams()
-	if err != nil {
-		return err
-	}
-
-	_, ctx, host, err := cmdutil.ResolveContext(f, cmd, cmdutil.FlagValue(cmd, "context"))
-	if err != nil {
-		return err
-	}
-
-	storeCode := cmdutil.FlagValue(cmd, "store-code")
-	if storeCode == "" {
-		storeCode = ctx.StoreCode
-	}
-
-	client, err := cmdutil.NewMagentoClient(host, storeCode)
+	ios, client, err := cmdutil.ClientFromCmd(f, cmd)
 	if err != nil {
 		return err
 	}

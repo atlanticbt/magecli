@@ -50,17 +50,25 @@ Delete a context.
 
 ### product list
 ```
-magecli product list [--filter "field op value"] [--sort "field:DIR"] [--limit N] [--page N] [--json]
+magecli product list [--filter "field op value"] [--sort "field:DIR"] [--limit N] [--page N] [--fields "a,b,c"] [--json]
 ```
 Search and list products. Supports multiple --filter and --sort flags.
+`--limit` defaults to 20; values outside 1-10000 are an error. `--fields` restricts the returned
+item fields (e.g. `sku,name,price`) to shrink the payload — most usefully by
+omitting `custom_attributes`. `--fields` requires a structured output mode
+(`--json`, `--yaml`, or `--template`).
 
 Filter operators: eq, neq, gt, gteq, lt, lteq, like, nlike, in, nin, null, notnull, from, to, finset
 
+Bulk lookup (one request): `--filter "sku in ABC-1,ABC-2,ABC-3"`
+
 ### product view
 ```
-magecli product view <sku> [--json]
+magecli product view <sku> [--fields "a,b,c"] [--json]
 ```
-View full product details by SKU.
+View full product details by SKU. A missing SKU is an error (exit 3), making
+this usable as an existence check. `--fields` trims the response and requires
+`--json`, `--yaml`, or `--template`.
 
 ### product media
 ```
@@ -82,7 +90,7 @@ List configurable product options (color, size, etc.).
 
 ### product search
 ```
-magecli product search <term> [--limit N] [--json]
+magecli product search <term> [--limit N] [--page N] [--sort "field:DIR"] [--fields "a,b,c"] [--json]
 ```
 Quick search for products by name. Shortcut for `product list --filter "name like %term%"`.
 
@@ -128,9 +136,9 @@ List option values for a dropdown/select attribute.
 
 ### attribute sets
 ```
-magecli attribute sets [--filter "..."] [--json]
+magecli attribute sets [--filter "..."] [--limit N] [--page N] [--json]
 ```
-List product attribute sets.
+List product attribute sets. `--limit` defaults to 100.
 
 ## inventory
 
@@ -231,27 +239,29 @@ View coupon details including code, usage stats, limits, and expiration.
 
 ### cms page list
 ```
-magecli cms page list [--filter "field op value"] [--limit N] [--json]
+magecli cms page list [--filter "field op value"] [--limit N] [--page N] [--json]
 ```
-List CMS pages with optional filtering.
+List CMS pages with optional filtering. HTML bodies are omitted from list output;
+retrieve a single body via `cms page view <id> --content`. You can still search
+bodies with `--filter "content like %term%"`.
 
 ### cms page view
 ```
 magecli cms page view <id> [--content] [--json]
 ```
-View CMS page details. Use `--content` to include HTML content.
+View CMS page details. The HTML body is omitted (in JSON/YAML too) unless `--content` is passed.
 
 ### cms block list
 ```
-magecli cms block list [--filter "field op value"] [--limit N] [--json]
+magecli cms block list [--filter "field op value"] [--limit N] [--page N] [--json]
 ```
-List CMS static blocks with optional filtering.
+List CMS static blocks with optional filtering. HTML bodies are omitted from list output.
 
 ### cms block view
 ```
 magecli cms block view <id> [--content] [--json]
 ```
-View CMS block details. Use `--content` to include HTML content.
+View CMS block details. The HTML body is omitted (in JSON/YAML too) unless `--content` is passed.
 
 ## api
 
@@ -276,8 +286,20 @@ Self-update magecli to the latest GitHub release. Downloads the appropriate bina
 | Flag | Description |
 |------|-------------|
 | `-c, --context <name>` | Use a specific context |
-| `--store-code <code>` | Override store code |
+| `--store-code <code>` | Override store code (honored by all commands) |
 | `--json` | JSON output |
 | `--yaml` | YAML output |
 | `--jq <expr>` | jq filter (requires --json) |
 | `--template <tmpl>` | Go template output |
+
+## Exit Codes
+
+| Exit | Meaning |
+|------|---------|
+| 0 | Success |
+| 1 | Usage/input/config error |
+| 2 | Network failure (DNS, connection refused, timeout) |
+| 3 | HTTP 404 — resource not found |
+| 4 | HTTP 401/403 — authentication/authorization failure |
+| 5 | Other HTTP error (4xx/5xx) |
+| 8 | Operation pending |

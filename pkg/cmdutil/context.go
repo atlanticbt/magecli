@@ -13,6 +13,7 @@ import (
 	"github.com/atlanticbt/magecli/internal/config"
 	"github.com/atlanticbt/magecli/internal/secret"
 	"github.com/atlanticbt/magecli/pkg/httpx"
+	"github.com/atlanticbt/magecli/pkg/iostreams"
 	"github.com/atlanticbt/magecli/pkg/magento"
 )
 
@@ -123,6 +124,38 @@ func ResolveHost(f *Factory, contextOverride, hostOverride string) (string, *con
 	}
 
 	return "", nil, fmt.Errorf("failed to resolve host configuration")
+}
+
+// StoreCodeFromCmd resolves the effective store code: the --store-code flag if
+// set (the persistent root flag or a per-command override), otherwise the
+// context's configured store code.
+func StoreCodeFromCmd(cmd *cobra.Command, ctx *config.Context) string {
+	if sc := strings.TrimSpace(FlagValue(cmd, "store-code")); sc != "" {
+		return sc
+	}
+	if ctx != nil {
+		return ctx.StoreCode
+	}
+	return ""
+}
+
+// ClientFromCmd resolves the active context, applies any --store-code override,
+// and constructs a Magento client. It collapses the boilerplate every command
+// otherwise repeats and guarantees --store-code is honored uniformly.
+func ClientFromCmd(f *Factory, cmd *cobra.Command) (*iostreams.IOStreams, *magento.Client, error) {
+	ios, err := f.Streams()
+	if err != nil {
+		return nil, nil, err
+	}
+	_, ctx, host, err := ResolveContext(f, cmd, FlagValue(cmd, "context"))
+	if err != nil {
+		return nil, nil, err
+	}
+	client, err := NewMagentoClient(host, StoreCodeFromCmd(cmd, ctx))
+	if err != nil {
+		return nil, nil, err
+	}
+	return ios, client, nil
 }
 
 // FlagValue returns the value for the named flag if it exists.

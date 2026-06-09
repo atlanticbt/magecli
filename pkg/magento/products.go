@@ -16,9 +16,14 @@ func (c *Client) ListProducts(ctx context.Context, search *SearchCriteria) (*Sea
 	return &result, nil
 }
 
-// GetProduct retrieves a single product by SKU.
-func (c *Client) GetProduct(ctx context.Context, sku string) (*Product, error) {
+// GetProduct retrieves a single product by SKU. When fields is non-empty it is
+// passed through as Magento's `fields=` response filter (e.g. "sku,name,price")
+// to shrink the payload.
+func (c *Client) GetProduct(ctx context.Context, sku, fields string) (*Product, error) {
 	path := "/V1/products/" + url.PathEscape(sku)
+	if fields != "" {
+		path += "?fields=" + url.QueryEscape(fields)
+	}
 	var product Product
 	if err := c.get(ctx, path, &product); err != nil {
 		return nil, fmt.Errorf("get product %q: %w", sku, err)

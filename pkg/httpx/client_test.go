@@ -3,6 +3,7 @@ package httpx
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -105,6 +106,100 @@ func TestNewRequest_PathResolution(t *testing.T) {
 	}
 	if !strings.Contains(req.URL.Path, "/rest/default/V1/products") {
 		t.Errorf("URL path = %q, expected /rest/default/V1/products", req.URL.Path)
+	}
+}
+
+func TestNewRequest_PreservesEscapedSlashInPath(t *testing.T) {
+	// A SKU containing "/" is path-escaped as %2F and must survive instead of
+	// being decoded back into a path separator (which would hit a different URL).
+	c, _ := New(Options{BaseURL: "https://example.com/rest/default"})
+	req, err := c.NewRequest(context.Background(), "GET", "/V1/products/ABC%2FDEF", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(req.URL.String(), "ABC%2FDEF") {
+		t.Errorf("escaped slash lost; URL = %q", req.URL.String())
+	}
+	if strings.Contains(req.URL.String(), "ABC/DEF") {
+		t.Errorf("encoded slash was decoded to a separator; URL = %q", req.URL.String())
+	}
+}
+
+func TestNewRequest_TokenNotSentToForeignHost(t *testing.T) {
+	c, _ := New(Options{BaseURL: "https://store.example.com/rest/default", Token: "secret"})
+
+	same, _ := c.NewRequest(context.Background(), "GET", "/V1/products", nil)
+	if same.Header.Get("Authorization") == "" {
+		t.Error("token should be attached for the configured host")
+	}
+
+	foreign, _ := c.NewRequest(context.Background(), "GET", "https://evil.example.org/steal", nil)
+	if got := foreign.Header.Get("Authorization"); got != "" {
+		t.Errorf("token leaked to foreign host: %q", got)
+	}
+}
+
+func TestNewRequest_TokenSentWithExplicitDefaultPort(t *testing.T) {
+	// An explicit :443 on an https URL is the same host as one without a port;
+	// the token must still be attached.
+	c, _ := New(Options{BaseURL: "https://store.example.com/rest/default", Token: "secret"})
+
+	req, _ := c.NewRequest(context.Background(), "GET", "https://store.example.com:443/rest/default/V1/products", nil)
+	if req.Header.Get("Authorization") == "" {
+		t.Error("token should be attached when only the explicit default port differs")
+	}
+
+	other, _ := c.NewRequest(context.Background(), "GET", "https://store.example.com:8443/rest/default/V1/products", nil)
+	if got := other.Header.Get("Authorization"); got != "" {
+		t.Errorf("token leaked to non-default port: %q", got)
+	}
+}
+
+func TestDecodeError_NamedParameters(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(`{"message": "Consumer is not authorized to access %resources", "parameters": {"resources": "Magento_Catalog::products"}}`))
+	}))
+	defer srv.Close()
+
+	c, _ := New(Options{BaseURL: srv.URL, Retry: RetryPolicy{MaxAttempts: 1}})
+	req, _ := c.NewRequest(context.Background(), "GET", "/test", nil)
+	err := c.Do(req, nil)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "Magento_Catalog::products") {
+		t.Errorf("named parameter not substituted, got: %v", err)
+	}
+	var herr *HTTPError
+	if !errors.As(err, &herr) || herr.StatusCode != http.StatusUnauthorized {
+		t.Errorf("expected *HTTPError with status 401, got %T %v", err, err)
+	}
+}
+
+func TestSubstituteParams_PrefixKeysDoNotClobber(t *testing.T) {
+	got := substituteParams(
+		"%fieldName (%field) is invalid",
+		[]byte(`{"field": "sku", "fieldName": "SKU"}`),
+	)
+	if got != "SKU (sku) is invalid" {
+		t.Errorf("substituteParams = %q, want %q", got, "SKU (sku) is invalid")
+	}
+}
+
+func TestDo_NoRetryOnNonIdempotentMethod(t *testing.T) {
+	attempts := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attempts++
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer srv.Close()
+
+	c, _ := New(Options{BaseURL: srv.URL, Retry: RetryPolicy{MaxAttempts: 4}})
+	req, _ := c.NewRequest(context.Background(), "POST", "/test", map[string]string{"a": "b"})
+	_ = c.Do(req, nil)
+	if attempts != 1 {
+		t.Errorf("POST should not be retried; got %d attempts", attempts)
 	}
 }
 

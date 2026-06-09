@@ -30,6 +30,23 @@ func TestSetPageSize(t *testing.T) {
 	}
 }
 
+func TestSetFields(t *testing.T) {
+	s := NewSearch()
+	s.SetFields("sku,name,price")
+	vals, _ := url.ParseQuery(s.Encode())
+	if got := vals.Get("fields"); got != "items[sku,name,price],total_count" {
+		t.Errorf("fields = %q, want items[sku,name,price],total_count", got)
+	}
+}
+
+func TestSetFields_EmptyOmitsParam(t *testing.T) {
+	s := NewSearch()
+	vals, _ := url.ParseQuery(s.Encode())
+	if _, ok := vals["fields"]; ok {
+		t.Error("fields param should be absent when not set")
+	}
+}
+
 func TestSetPageSize_IgnoresZeroAndNegative(t *testing.T) {
 	s := NewSearch()
 	s.SetPageSize(0)

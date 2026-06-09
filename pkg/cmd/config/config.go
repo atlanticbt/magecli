@@ -60,17 +60,7 @@ Examples:
 }
 
 func runList(cmd *cobra.Command, f *cmdutil.Factory, filter string) error {
-	ios, err := f.Streams()
-	if err != nil {
-		return err
-	}
-
-	_, ctx, host, err := cmdutil.ResolveContext(f, cmd, cmdutil.FlagValue(cmd, "context"))
-	if err != nil {
-		return err
-	}
-
-	client, err := cmdutil.NewMagentoClient(host, ctx.StoreCode)
+	ios, client, err := cmdutil.ClientFromCmd(f, cmd)
 	if err != nil {
 		return err
 	}
@@ -127,17 +117,7 @@ Examples:
 }
 
 func runGet(cmd *cobra.Command, f *cmdutil.Factory, path string) error {
-	ios, err := f.Streams()
-	if err != nil {
-		return err
-	}
-
-	_, ctx, host, err := cmdutil.ResolveContext(f, cmd, cmdutil.FlagValue(cmd, "context"))
-	if err != nil {
-		return err
-	}
-
-	client, err := cmdutil.NewMagentoClient(host, ctx.StoreCode)
+	ios, client, err := cmdutil.ClientFromCmd(f, cmd)
 	if err != nil {
 		return err
 	}
@@ -192,17 +172,7 @@ Examples:
 }
 
 func runDump(cmd *cobra.Command, f *cmdutil.Factory) error {
-	ios, err := f.Streams()
-	if err != nil {
-		return err
-	}
-
-	_, ctx, host, err := cmdutil.ResolveContext(f, cmd, cmdutil.FlagValue(cmd, "context"))
-	if err != nil {
-		return err
-	}
-
-	client, err := cmdutil.NewMagentoClient(host, ctx.StoreCode)
+	ios, client, err := cmdutil.ClientFromCmd(f, cmd)
 	if err != nil {
 		return err
 	}

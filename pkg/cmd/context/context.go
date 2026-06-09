@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/atlanticbt/magecli/internal/config"
+	"github.com/atlanticbt/magecli/internal/secret"
 	"github.com/atlanticbt/magecli/pkg/cmdutil"
 )
 
@@ -66,14 +67,23 @@ func runCreate(cmd *cobra.Command, f *cmdutil.Factory, name string, opts *create
 	if _, ok := cfg.Hosts[hostKey]; !ok {
 		baseURL, err := cmdutil.NormalizeBaseURL(hostKey)
 		if err != nil {
-			return fmt.Errorf("host %q not found; run `%s auth login` first", hostKey, f.ExecutableName)
+			return fmt.Errorf("host %q not found and is not a valid URL; run `%s auth login` first", opts.Host, f.ExecutableName)
 		}
-		hostKey, err = cmdutil.HostKeyFromURL(baseURL)
+		key, err := cmdutil.HostKeyFromURL(baseURL)
 		if err != nil {
 			return err
 		}
-		if _, ok := cfg.Hosts[hostKey]; !ok {
-			return fmt.Errorf("host %q not found; run `%s auth login` first", opts.Host, f.ExecutableName)
+		hostKey = key
+		if _, ok := cfg.Hosts[key]; !ok {
+			// Register the host from the provided URL only when the credential
+			// comes from the MAGECLI_TOKEN env var, so headless bootstrap works
+			// without a prior `auth login`. Otherwise reject the unknown host
+			// to keep typo protection.
+			if secret.TokenFromEnv() == "" {
+				return fmt.Errorf("host %q not found; run `%s auth login` first (or set %s to register it directly)", opts.Host, f.ExecutableName, secret.EnvToken)
+			}
+			cfg.SetHost(key, &config.Host{BaseURL: baseURL})
+			_, _ = fmt.Fprintf(ios.Out, "Registered host %s\n", baseURL)
 		}
 	}
 

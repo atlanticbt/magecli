@@ -12,16 +12,16 @@ func TestGetStoreConfigRaw(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode([]map[string]any{
 			{
-				"id":                          float64(1),
-				"code":                        "default",
-				"website_id":                  float64(0),
-				"locale":                      "en_US",
-				"base_currency_code":          "USD",
+				"id":                            float64(1),
+				"code":                          "default",
+				"website_id":                    float64(0),
+				"locale":                        "en_US",
+				"base_currency_code":            "USD",
 				"default_display_currency_code": "USD",
-				"timezone":                    "America/New_York",
-				"weight_unit":                 "lbs",
-				"base_url":                    "https://example.com/",
-				"secure_base_url":             "https://example.com/",
+				"timezone":                      "America/New_York",
+				"weight_unit":                   "lbs",
+				"base_url":                      "https://example.com/",
+				"secure_base_url":               "https://example.com/",
 			},
 		})
 	}))
@@ -63,12 +63,12 @@ func TestGetConfigEntries(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode([]map[string]any{
 			{
-				"id":               float64(1),
-				"code":             "default",
-				"website_id":       float64(0),
-				"locale":           "en_US",
+				"id":                 float64(1),
+				"code":               "default",
+				"website_id":         float64(0),
+				"locale":             "en_US",
 				"base_currency_code": "USD",
-				"timezone":         "America/New_York",
+				"timezone":           "America/New_York",
 			},
 		})
 	}))
@@ -140,10 +140,10 @@ func TestGetConfigEntries_SortedByPathWithinScope(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode([]map[string]any{
 			{
-				"id":               float64(1),
-				"code":             "default",
-				"timezone":         "America/New_York",
-				"locale":           "en_US",
+				"id":                 float64(1),
+				"code":               "default",
+				"timezone":           "America/New_York",
+				"locale":             "en_US",
 				"base_currency_code": "USD",
 			},
 		})
