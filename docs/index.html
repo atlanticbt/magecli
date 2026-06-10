@@ -724,12 +724,14 @@
       <div class="step-n">2</div>
       <div class="step-body">
         <h3>Authenticate</h3>
-        <p>Store the Access Token in your OS keyring:</p>
-        <pre><code><span class="g">magecli auth login</span> https://store.example.com <span class="b">--token</span> <span class="s">&lt;access-token&gt;</span></code></pre>
-        <p>On headless servers without a keyring backend:</p>
-        <pre><code><span class="g">magecli auth login</span> https://store.example.com <span class="b">--token</span> <span class="s">&lt;access-token&gt;</span> <span class="b">--allow-insecure-store</span></code></pre>
-        <p>Or use an environment variable instead:</p>
-        <pre><code><span class="g">export</span> MAGECLI_TOKEN=<span class="s">&lt;access-token&gt;</span></code></pre>
+        <p>Run <code>auth login</code> and enter the Access Token at the hidden prompt — it's stored in your OS keyring, never in the config file:</p>
+        <pre><code><span class="g">magecli auth login</span> https://store.example.com</code></pre>
+        <p>On headless servers without a keyring backend, use the encrypted file store fallback:</p>
+        <pre><code><span class="g">magecli auth login</span> https://store.example.com <span class="b">--allow-insecure-store</span></code></pre>
+        <p>For CI and headless agents, supply the token via the <code>MAGECLI_TOKEN</code> environment variable, injected by your CI secret store — <code>auth login</code> then just registers the host without storing anything.</p>
+        <div class="callout">
+          <p><strong>Keep the token out of shell history:</strong> avoid <code>--token &lt;value&gt;</code> and <code>export MAGECLI_TOKEN=&lt;value&gt;</code> typed by hand — both leak the secret into history and process lists. The <code>--token</code> flag is intended for non-TTY automation where the value is already held by your tooling.</p>
+        </div>
       </div>
     </div>
 
@@ -773,7 +775,7 @@
     <table>
       <thead><tr><th>Command</th><th>Description</th></tr></thead>
       <tbody>
-        <tr><td><code>auth login &lt;host&gt; --token &lt;t&gt;</code></td><td>Store a bearer token for a host</td></tr>
+        <tr><td><code>auth login &lt;host&gt;</code></td><td>Store a bearer token for a host (hidden prompt)</td></tr>
         <tr><td><code>auth status</code></td><td>Show auth status for all hosts</td></tr>
         <tr><td><code>auth logout &lt;host&gt;</code></td><td>Remove credentials for a host</td></tr>
         <tr><td><code>context create &lt;name&gt;</code></td><td>Create a named context</td></tr>

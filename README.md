@@ -47,8 +47,8 @@ curl -fsSL https://raw.githubusercontent.com/atlanticbt/magecli/main/install.sh 
 ## Quick Start
 
 ```bash
-# 1. Authenticate with your Magento store
-magecli auth login https://store.example.com --token <integration-bearer-token>
+# 1. Authenticate with your Magento store (enter the Integration token at the hidden prompt)
+magecli auth login https://store.example.com
 
 # 2. Create a context (read-only by default)
 magecli context create production --host store.example.com --set-active
@@ -105,15 +105,20 @@ Magento 2.3.2+ requires authentication for all REST API access. magecli uses **I
 ### Storing the Token
 
 ```bash
-# Store token in OS keyring
-magecli auth login https://store.example.com --token <access-token>
+# Store token in OS keyring — you are asked for it at a hidden prompt
+magecli auth login https://store.example.com
 
-# Or use environment variable
-export MAGECLI_TOKEN=<access-token>
+# Headless/CI: set MAGECLI_TOKEN in the environment (e.g. via your CI secret
+# store) instead of the keyring; auth login then just registers the host
+magecli auth login https://store.example.com
 
-# On headless servers without a keyring, use the insecure file store
-magecli auth login https://store.example.com --token <access-token> --allow-insecure-store
+# On headless servers without a keyring, use the encrypted file store fallback
+magecli auth login https://store.example.com --allow-insecure-store
 ```
+
+Avoid passing the token with `--token` or typing it into `export` commands —
+both leak the secret into shell history. The `--token` flag exists for non-TTY
+automation where the value is already held in a variable by your tooling.
 
 ## Filtering & Sorting
 
