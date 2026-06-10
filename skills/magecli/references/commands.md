@@ -4,9 +4,15 @@
 
 ### auth login
 ```
-magecli auth login <host> --token <token> [--allow-insecure-store]
+magecli auth login <host> [--token <token>] [--allow-insecure-store]
 ```
-Store Magento Integration bearer token for a host.
+Register a host and store its Magento Integration bearer token in the OS
+keyring. Run **without** `--token` in a terminal to enter the token at a
+hidden prompt — preferred, since it keeps the secret out of shell history and
+process lists. `--token` exists only for non-TTY automation; never place a
+real token value in a generated command. With `MAGECLI_TOKEN` set in the
+environment (by the user or CI secret store), `auth login <host>` just
+registers the host and stores nothing.
 
 ### auth status
 ```
