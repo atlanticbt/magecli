@@ -542,6 +542,8 @@
     <a href="#store" class="sidebar-link">Store Config</a>
     <a href="#config" class="sidebar-link">System Config</a>
     <a href="#promo" class="sidebar-link">Promotions</a>
+    <a href="#sales" class="sidebar-link">Sales &amp; Orders</a>
+    <a href="#customers" class="sidebar-link">Customers</a>
     <a href="#cms" class="sidebar-link">CMS</a>
     <a href="#api" class="sidebar-link">Raw API</a>
   </div>
@@ -809,6 +811,14 @@
         <tr><td><code>promo cart-rule view &lt;id&gt;</code></td><td>View cart price rule details</td></tr>
         <tr><td><code>promo coupon list</code></td><td>List coupon codes</td></tr>
         <tr><td><code>promo coupon view &lt;id&gt;</code></td><td>View coupon details</td></tr>
+        <tr><td><code>sales order list</code></td><td>List orders (needs Sales ACL)</td></tr>
+        <tr><td><code>sales order view &lt;number&gt;</code></td><td>View one order with line items</td></tr>
+        <tr><td><code>sales invoice list</code></td><td>List invoices</td></tr>
+        <tr><td><code>sales shipment list</code></td><td>List shipments + tracking</td></tr>
+        <tr><td><code>sales creditmemo list</code></td><td>List credit memos (refunds)</td></tr>
+        <tr><td><code>sales totals --from &lt;date&gt;</code></td><td>Sum order totals by currency</td></tr>
+        <tr><td><code>customer search</code></td><td>Search customers (needs Customers ACL)</td></tr>
+        <tr><td><code>customer view &lt;id|email&gt;</code></td><td>View one customer</td></tr>
         <tr><td><code>cms page list</code></td><td>List CMS pages</td></tr>
         <tr><td><code>cms page view &lt;id&gt;</code></td><td>View a CMS page</td></tr>
         <tr><td><code>cms block list</code></td><td>List CMS blocks</td></tr>
@@ -994,6 +1004,61 @@ diff &lt;(<span class="g">magecli</span> <span class="b">-c</span> staging <span
 
     <div class="callout">
       <p><strong>Tip:</strong> Short aliases are available &mdash; <code>promo cr list</code> for catalog rules and <code>promo sr list</code> for cart (sales) rules.</p>
+    </div>
+  </section>
+
+  <!-- Sales -->
+  <section id="sales">
+    <h2>Sales &amp; Orders</h2>
+    <p>List and inspect orders, invoices, shipments, and credit memos, and sum revenue over a date range. All list commands support <code>--filter</code>, <code>--sort</code>, <code>--limit</code>, and <code>--page</code>.</p>
+
+    <div class="callout">
+      <p><strong>Requires the Sales ACL scope.</strong> Grant the Integration token <em>Sales</em> resource access in Magento Admin &gt; System &gt; Integrations; without it these commands fail with a clear 403 hint (exit 4).</p>
+    </div>
+
+    <h3>Orders</h3>
+    <pre><code><span class="c"># Recent orders</span>
+<span class="g">magecli sales order list</span> <span class="b">--sort</span> <span class="s">"created_at:DESC"</span>
+
+<span class="c"># Orders in a state, or for a customer</span>
+<span class="g">magecli sales order list</span> <span class="b">--filter</span> <span class="s">"status eq processing"</span>
+<span class="g">magecli sales order list</span> <span class="b">--filter</span> <span class="s">"customer_email eq jane@example.com"</span> <span class="b">--json</span>
+
+<span class="c"># One order by its order number (line items included)</span>
+<span class="g">magecli sales order view</span> 000000042 <span class="b">--json</span></code></pre>
+    <p>Orders are returned with a curated default field set (an untrimmed order payload runs 20&ndash;60KB); the billing address stops at city/region/postcode. Override with <code>--fields</code> when you need more.</p>
+
+    <h3>Invoices, Shipments, Credit Memos</h3>
+    <pre><code><span class="c"># Documents for one order</span>
+<span class="g">magecli sales invoice list</span> <span class="b">--filter</span> <span class="s">"order_id eq 42"</span>
+<span class="g">magecli sales shipment list</span> <span class="b">--filter</span> <span class="s">"order_id eq 42"</span>   <span class="c"># includes tracking numbers</span>
+<span class="g">magecli sales creditmemo list</span> <span class="b">--filter</span> <span class="s">"order_id eq 42"</span></code></pre>
+
+    <h3>Sales Totals</h3>
+    <pre><code><span class="c"># Revenue since June 1, grouped by currency</span>
+<span class="g">magecli sales totals</span> <span class="b">--from</span> 2026-06-01
+
+<span class="c"># A closed period, completed orders only</span>
+<span class="g">magecli sales totals</span> <span class="b">--from</span> 2026-06-01 <span class="b">--to</span> 2026-07-01 <span class="b">--status</span> complete <span class="b">--json</span></code></pre>
+    <p>Gross is <code>grand_total</code> (includes tax and shipping), not net revenue. Scans at most 10,000 orders and says so if the range was too large &mdash; narrow the range and sum the pieces.</p>
+  </section>
+
+  <!-- Customers -->
+  <section id="customers">
+    <h2>Customers</h2>
+    <p>Search and inspect customer accounts. Requires the <em>Customers</em> ACL scope on the Integration token.</p>
+    <pre><code><span class="c"># Search by email domain or signup date</span>
+<span class="g">magecli customer search</span> <span class="b">--filter</span> <span class="s">"email like %@example.com"</span>
+<span class="g">magecli customer search</span> <span class="b">--filter</span> <span class="s">"created_at from 2026-01-01"</span> <span class="b">--json</span>
+
+<span class="c"># One customer by ID or email</span>
+<span class="g">magecli customer view</span> 9
+<span class="g">magecli customer view</span> jane@example.com <span class="b">--json</span>
+
+<span class="c"># Postal addresses/phone are excluded unless explicitly requested</span>
+<span class="g">magecli customer view</span> 9 <span class="b">--include-addresses</span> <span class="b">--json</span></code></pre>
+    <div class="callout">
+      <p><strong>PII defaults:</strong> names and emails are returned (they are the lookup keys), but postal addresses and phone numbers require <code>--include-addresses</code>. On multi-website stores one email can map to several accounts &mdash; <code>customer view &lt;email&gt;</code> lists all matches so you can pick one by ID.</p>
     </div>
   </section>
 

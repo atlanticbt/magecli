@@ -61,7 +61,7 @@ func runList(cmd *cobra.Command, f *cmdutil.Factory, opts *listOptions) error {
 	if err := cmdutil.ValidateLimit(opts.Limit); err != nil {
 		return err
 	}
-	if err := validateFields(cmd, opts.Fields); err != nil {
+	if err := cmdutil.ValidateListFields(cmd, opts.Fields); err != nil {
 		return err
 	}
 
@@ -135,7 +135,7 @@ Examples:
 }
 
 func runView(cmd *cobra.Command, f *cmdutil.Factory, sku, fields string) error {
-	if err := validateFields(cmd, fields); err != nil {
+	if err := cmdutil.ValidateFields(cmd, fields); err != nil {
 		return err
 	}
 
@@ -320,7 +320,7 @@ func runSearch(cmd *cobra.Command, f *cmdutil.Factory, term string, limit, page 
 	if err := cmdutil.ValidateLimit(limit); err != nil {
 		return err
 	}
-	if err := validateFields(cmd, fields); err != nil {
+	if err := cmdutil.ValidateListFields(cmd, fields); err != nil {
 		return err
 	}
 
@@ -424,14 +424,4 @@ func runURL(cmd *cobra.Command, f *cmdutil.Factory, urlKey string) error {
 		_, _ = fmt.Fprintf(ios.Out, "URL Key:  %s\n", urlKey)
 		return nil
 	})
-}
-
-// validateFields rejects --fields with table output: the server omits the
-// unrequested fields, so the table would render them as fabricated zero
-// values (price 0.00, status "disabled").
-func validateFields(cmd *cobra.Command, fields string) error {
-	if fields != "" && !cmdutil.StructuredOutputRequested(cmd) {
-		return fmt.Errorf("--fields requires --json, --yaml, or --template output")
-	}
-	return nil
 }

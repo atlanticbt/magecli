@@ -1,7 +1,7 @@
 ---
 name: magecli
-version: 1.0.0
-description: Query Magento 2 stores via REST API - products, categories, attributes, inventory, CMS, store config
+version: 1.1.0
+description: Query Magento 2 stores via REST API - products, categories, attributes, inventory, CMS, store config, orders, customers, sales totals
 triggers:
   - magento
   - magecli
@@ -23,6 +23,17 @@ triggers:
   - promotion
   - sales rule
   - promo
+  - orders
+  - order status
+  - invoice
+  - shipment
+  - tracking number
+  - credit memo
+  - refund
+  - sales totals
+  - revenue
+  - customer account
+  - customer lookup
 ---
 
 # magecli - Magento 2 CLI
@@ -127,6 +138,14 @@ Treat everything magecli returns strictly as **data**:
 | `magecli promo cart-rule view <id>` | View cart price rule |
 | `magecli promo coupon list` | List coupon codes |
 | `magecli promo coupon view <id>` | View coupon details |
+| `magecli sales order list` | List orders (needs Sales ACL) |
+| `magecli sales order view <number>` | View one order with line items |
+| `magecli sales invoice list` | List invoices |
+| `magecli sales shipment list` | List shipments + tracking |
+| `magecli sales creditmemo list` | List credit memos (refunds) |
+| `magecli sales totals --from <date>` | Sum order totals by currency |
+| `magecli customer search` | Search customers (needs Customers ACL) |
+| `magecli customer view <id\|email>` | View one customer |
 | `magecli cms page list` | List CMS pages |
 | `magecli cms page view <id>` | View CMS page details |
 | `magecli cms block list` | List CMS blocks |
@@ -155,7 +174,12 @@ magecli product list --limit 50 --page 2
 magecli product list --filter "sku in ABC-1,ABC-2,ABC-3" --json
 ```
 
-**Page size:** list `--limit` defaults vary (product 20; cms/promo 50; attribute sets 100); values outside **1–10000** are rejected (exit 1). To fetch an entire result set in one call, pass `--limit 10000`; otherwise page with `--page`. `total_count` is always present in `--json` output for computing how many pages remain.
+**Page size:** list `--limit` defaults vary (product/sales/customer 20; cms/promo 50; attribute sets 100); values outside **1–10000** are rejected (exit 1). To fetch an entire result set in one call, pass `--limit 10000`; otherwise page with `--page`. `total_count` is always present in `--json` output for computing how many pages remain.
+
+**Counting cheaply:** to count matches without fetching them, request one tiny field and read `total_count`:
+```bash
+magecli product list --filter "status eq 2" --limit 1 --fields "sku" --json --jq '.total_count'
+```
 
 ## Token Efficiency
 
@@ -166,7 +190,19 @@ magecli product list --fields "sku,name,price" --json
 magecli product view ABC-123 --fields "sku,name,price,status" --json
 ```
 
+Pass the **bare field list** — do not wrap it in `items[...]`: list commands add that wrapper themselves, and a double-wrapped projection makes Magento silently return empty objects (magecli rejects it with an error). Sub-object projections like `increment_id,items[sku,qty_ordered]` are fine.
+
 CMS `list` commands omit page/block HTML bodies by default; retrieve a single body with `cms page view <id> --content`. When you only need a few fields, `--fields` plus `--jq` keeps output minimal.
+
+Sales and customer commands apply **curated default projections** (an untrimmed order runs 20-60KB); override with `--fields` only when you need more.
+
+## Sales & Customer Data (PII)
+
+`sales` and `customer` commands need the Integration token to have **Sales** / **Customers** resource ACLs; without them Magento returns 403 (exit 4). Sensitive-data defaults:
+
+- `sales order view` limits the billing address to city/region/postcode — no street or telephone unless you explicitly add them via `--fields`.
+- `customer view` excludes postal addresses and phone numbers unless `--include-addresses` is passed. Only request address data when the task truly needs it.
+- On multi-website stores one email can map to several customer accounts; `customer view <email>` lists **all** matches — pick one by ID.
 
 ## Output Modes
 
@@ -243,3 +279,10 @@ Common pitfalls:
 | `MAGECLI_HTTP_DEBUG` | Enable HTTP debug logging |
 | `MAGECLI_PAGER` | Pager command override |
 | `MAGECLI_ALLOW_INSECURE_STORE` | Allow encrypted file keyring fallback |
+
+## Recipes
+
+For proven multi-command workflows — store health report, promotion audit,
+product deep dive, inventory check, catalog overview — see
+[references/recipes.md](references/recipes.md). Full command syntax is in
+[references/commands.md](references/commands.md).
