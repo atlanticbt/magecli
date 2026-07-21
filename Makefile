@@ -59,7 +59,7 @@ verify:
 	$(GO) mod verify
 
 vulncheck:
-	$(GO) run golang.org/x/vuln/cmd/govulncheck@latest ./...
+	./scripts/vulncheck.sh
 
 clean:
 	rm -rf $(BIN_DIR) dist/
