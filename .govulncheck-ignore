@@ -1,0 +1,9 @@
+# Advisory IDs (one per line) that scripts/vulncheck.sh will not fail on.
+# Each entry must have a comment explaining why it is safe to ignore.
+
+# golang.org/x/crypto/openpgp is unmaintained and will never be fixed
+# ("Fixed in: N/A"). It is imported by github.com/creativeprojects/go-selfupdate
+# (still present in v1.6.0), but magecli only uses ChecksumValidator — the PGP
+# verification code path is never invoked; govulncheck flags it via init chains.
+# Remove this entry if go-selfupdate migrates to ProtonMail/go-crypto.
+GO-2026-5932
