@@ -1,0 +1,10 @@
+# OSV IDs excluded from scripts/vulncheck.sh, one per line.
+# Every entry needs a justification and should be revisited periodically
+# (remove the entry once an upstream fix exists).
+
+# golang.org/x/crypto/openpgp is unmaintained and has no fixed version.
+# It is pulled in by github.com/creativeprojects/go-selfupdate, which uses it
+# only for its optional PGP release validator. magecli validates releases with
+# ChecksumValidator and never calls the openpgp code; it is reachable only
+# through package init. Remove once go-selfupdate migrates off x/crypto/openpgp.
+GO-2026-5932

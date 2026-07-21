@@ -13,7 +13,7 @@ make fmt          # go fmt
 make lint         # golangci-lint run
 make tidy         # go mod tidy
 make verify       # go mod verify
-make vulncheck    # govulncheck ./...
+make vulncheck    # govulncheck via scripts/vulncheck.sh (allowlist: .govulncheck-ignore)
 make clean        # rm bin/ and dist/
 make sync-skills  # Sync skills/ → .claude/skills/ and .codex/skills/
 make check-skills # Verify skill copies are in sync
