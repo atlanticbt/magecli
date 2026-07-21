@@ -10,9 +10,11 @@ import (
 	"github.com/atlanticbt/magecli/pkg/cmd/cms"
 	configcmd "github.com/atlanticbt/magecli/pkg/cmd/config"
 	contextcmd "github.com/atlanticbt/magecli/pkg/cmd/context"
+	"github.com/atlanticbt/magecli/pkg/cmd/customer"
 	"github.com/atlanticbt/magecli/pkg/cmd/inventory"
 	"github.com/atlanticbt/magecli/pkg/cmd/product"
 	"github.com/atlanticbt/magecli/pkg/cmd/promo"
+	"github.com/atlanticbt/magecli/pkg/cmd/sales"
 	"github.com/atlanticbt/magecli/pkg/cmd/store"
 	"github.com/atlanticbt/magecli/pkg/cmd/update"
 	"github.com/atlanticbt/magecli/pkg/cmdutil"
@@ -57,6 +59,8 @@ Common flows:
 		store.NewCmdStore(f),
 		configcmd.NewCmdConfig(f),
 		promo.NewCmdPromo(f),
+		sales.NewCmdSales(f),
+		customer.NewCmdCustomer(f),
 		cms.NewCmdCMS(f),
 		api.NewCmdAPI(f),
 		update.NewCmdUpdate(f),

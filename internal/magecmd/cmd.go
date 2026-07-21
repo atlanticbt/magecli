@@ -2,11 +2,13 @@ package magecmd
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/atlanticbt/magecli/internal/build"
@@ -70,16 +72,30 @@ func Main() int {
 		var httpErr *httpx.HTTPError
 		if errors.As(err, &httpErr) {
 			switch {
-			case httpErr.StatusCode == 401 || httpErr.StatusCode == 403:
+			case httpErr.StatusCode == 401:
 				_, _ = fmt.Fprintf(ios.ErrOut,
-					"hint: authentication failed — run `%s auth login`, or verify the Integration token's resource access in Magento Admin > System > Integrations.\n",
+					"hint: the store rejected the API token — it may be expired or revoked. Run `%s auth login` with a fresh Integration token.\n",
 					f.ExecutableName)
+				return exitAuth
+			case httpErr.StatusCode == 403:
+				_, _ = fmt.Fprintln(ios.ErrOut,
+					"hint: the token doesn't have permission for this resource — widen the Integration's ACL scopes in Magento Admin > System > Integrations (sales and customer commands need the Sales/Customers scopes).")
 				return exitAuth
 			case httpErr.StatusCode == 404:
 				return exitNotFound
 			default:
 				return exitHTTP
 			}
+		}
+
+		// Decode failures mean Magento answered but the payload didn't match
+		// the expected shape — a data problem, not a connectivity one.
+		var jsonErr *json.UnmarshalTypeError
+		if errors.As(err, &jsonErr) || strings.Contains(err.Error(), "json: cannot unmarshal") {
+			_, _ = fmt.Fprintf(ios.ErrOut,
+				"hint: the store answered, but the payload shape was unexpected — try different arguments, or inspect the raw response with `%s api get <path>`.\n",
+				f.ExecutableName)
+			return exitGeneric
 		}
 
 		// User-initiated cancellation (Ctrl-C/SIGTERM) is not a network failure.

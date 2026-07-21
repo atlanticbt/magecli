@@ -76,6 +76,8 @@ magecli inventory status SKU123 --json
 | `store views/config/groups/websites` | Store configuration |
 | `config list/get/dump` | System configuration |
 | `promo catalog-rule/cart-rule/coupon list/view` | Promotions & coupons |
+| `sales order list/view`, `sales invoice/shipment/creditmemo list`, `sales totals` | Orders & revenue (needs Sales ACL) |
+| `customer search/view` | Customer accounts (needs Customers ACL) |
 | `cms page list/view`, `cms block list/view` | CMS content |
 | `api` | Raw REST API escape hatch (read-only by default) |
 | `update` | Self-update to the latest release |
@@ -93,7 +95,7 @@ Magento 2.3.2+ requires authentication for all REST API access. magecli uses **I
    - Enter a name (e.g., `magecli`)
    - Leave the callback/identity URLs blank
 5. On the **API** tab:
-   - Select the resource access the integration needs (use **All** for full read access, or scope to specific resources like Catalog, CMS, etc.)
+   - Select the resource access the integration needs (use **All** for full read access, or scope to specific resources like Catalog, CMS, etc.). The `sales` and `customer` commands need the **Sales** and **Customers** scopes — skip them if connected agents shouldn't see order or customer data (those commands then fail with a clear 403 hint).
 6. Click **Save** and then **Activate**
 7. Confirm the permissions in the popup — Magento will display four tokens:
    - Consumer Key

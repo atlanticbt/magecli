@@ -62,7 +62,9 @@ Search and list products. Supports multiple --filter and --sort flags.
 `--limit` defaults to 20; values outside 1-10000 are an error. `--fields` restricts the returned
 item fields (e.g. `sku,name,price`) to shrink the payload — most usefully by
 omitting `custom_attributes`. `--fields` requires a structured output mode
-(`--json`, `--yaml`, or `--template`).
+(`--json`, `--yaml`, or `--template`). Pass the bare field list — do not wrap
+it in `items[...]`; the command does that, and a double wrap makes Magento
+return empty objects (magecli rejects it).
 
 Filter operators: eq, neq, gt, gteq, lt, lteq, like, nlike, in, nin, null, notnull, from, to, finset
 
@@ -240,6 +242,83 @@ List coupon codes. Filter by code, rule_id, or other fields.
 magecli promo coupon view <id> [--json]
 ```
 View coupon details including code, usage stats, limits, and expiration.
+
+## sales
+
+All sales commands require the Integration token to have **Sales** resource
+ACLs (Magento Admin > System > Integrations); without them Magento returns
+403 (exit 4). List commands apply curated default field projections (an
+untrimmed order runs 20-60KB); override with `--fields`.
+
+### sales order list
+```
+magecli sales order list [--filter "field op value"] [--sort "field:DIR"] [--limit N] [--page N] [--fields "a,b,c"] [--json]
+```
+List orders. Returns order numbers, status, totals, and customer name/email
+per order by default. Useful filters: `status eq processing`,
+`created_at from 2026-06-01`, `customer_email eq jane@example.com`.
+
+### sales order view
+```
+magecli sales order view <order number> [--id N] [--fields "a,b,c"] [--json]
+```
+View a single order by its human-facing order number (increment_id), or by
+internal entity ID via `--id`. Includes line items and totals. The billing
+address is limited to city/region/postcode — request street or telephone via
+`--fields` only if truly needed.
+
+### sales invoice list
+```
+magecli sales invoice list [--filter "field op value"] [--limit N] [--page N] [--json]
+```
+List invoices (billing documents for orders). Filter by `order_id eq N` to
+find a specific order's invoices.
+
+### sales shipment list
+```
+magecli sales shipment list [--filter "field op value"] [--limit N] [--page N] [--json]
+```
+List shipments including tracking numbers and carriers. Filter by
+`order_id eq N` to find a specific order's shipments.
+
+### sales creditmemo list
+```
+magecli sales creditmemo list [--filter "field op value"] [--limit N] [--page N] [--json]
+```
+List credit memos (refund documents). Filter by `order_id eq N` to find a
+specific order's refunds.
+
+### sales totals
+```
+magecli sales totals --from <date> [--to <date>] [--status <status>] [--json]
+```
+Sum order grand totals over a date range, grouped by currency. `--to`
+defaults to now. Note: gross is grand_total (includes tax and shipping), not
+net revenue. Scans at most 10,000 orders; the result says if the range was
+too large to complete — narrow the range and sum the pieces.
+
+## customer
+
+Customer commands require the Integration token to have **Customers**
+resource ACLs; without them Magento returns 403 (exit 4). Names and emails
+are returned by default — they are the lookup keys — but postal addresses and
+phone numbers are excluded unless explicitly requested.
+
+### customer search
+```
+magecli customer search [--filter "field op value"] [--sort "field:DIR"] [--limit N] [--page N] [--fields "a,b,c"] [--json]
+```
+Search customer accounts, e.g. `--filter "email like %@example.com"` or
+`--filter "created_at from 2026-01-01"`. Never returns addresses.
+
+### customer view
+```
+magecli customer view <id|email> [--include-addresses] [--json]
+```
+View a single customer by numeric ID or email. Postal addresses and phone
+numbers are only returned with `--include-addresses`. On multi-website stores
+the same email can belong to several accounts; when that happens all matches
+are listed — re-run with a numeric ID to pick one.
 
 ## cms
 

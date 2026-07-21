@@ -51,11 +51,14 @@ pkg/
     store/            views, config, groups, websites
     config/           System config get, list, dump
     promo/            catalog-rule, cart-rule, coupon list/view
+    sales/            order list/view, invoice/shipment/creditmemo list, totals
+    customer/         search, view
     cms/              page list/view, block list/view
     api/              Raw API escape hatch
     update/           Self-update from GitHub releases
   cmdutil/            Factory, context resolution, output helpers
   magento/            REST client + SearchCriteria builder
+  magentotest/        Fake Magento REST server for tests (exported; shared with magento-mcp)
   httpx/              HTTP client (Bearer auth, retry, cache)
   format/             JSON/YAML/jq/template output
   iostreams/          Terminal IO
@@ -95,7 +98,13 @@ Tokens are stored in the OS keyring, never written to the config file.
 
 ## Auth
 
-Magento 2.3.2+ requires authentication for all REST reads. Uses Integration Bearer Tokens (permanent tokens from Magento Admin > System > Integrations).
+Magento 2.3.2+ requires authentication for all REST reads. Uses Integration Bearer Tokens (permanent tokens from Magento Admin > System > Integrations). The `sales` and `customer` commands additionally need the Sales/Customers resource ACLs on the integration; without them Magento returns 403 (exit 4 with a remediation hint).
+
+## Sales/Customer Data Handling
+
+Orders and customers are decoded dynamically (`magento.GenericResult`, map items) with curated default field projections (`magento.OrderListFields` etc.) — an untrimmed order runs 20-60KB. PII is minimized by default: order views project the billing address down to city/region/postcode, and customer addresses/phones require `--include-addresses`. `customer view <email>` returns all accounts sharing the email (multi-website stores) rather than an arbitrary one.
+
+`SearchCriteria.SetFields` wraps the field list in `items[...],total_count` itself; a pre-wrapped list produces `items[items[...]]`, which Magento answers with silently empty objects (found live against 2.4.7). `cmdutil.ValidateListFields` rejects that on every list command, and `pkg/magentotest` 500s on it.
 
 ## Write Safety
 
