@@ -1,6 +1,6 @@
 module github.com/atlanticbt/magecli
 
-go 1.25.12
+go 1.26.9
 
 require (
 	github.com/99designs/keyring v1.2.2

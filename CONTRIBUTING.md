@@ -12,7 +12,7 @@ Thanks for your interest in contributing! This guide will help you get started.
 
 ## Development Setup
 
-**Requirements:** Go 1.25+
+**Requirements:** Go 1.26+
 
 ```bash
 make build        # Build binary to bin/magecli
