@@ -4,7 +4,7 @@ Magento 2 CLI tool for AI agents and developers. Queries Magento 2 stores via RE
 
 ## Build
 
-Go 1.25+ required (see go.mod).
+Go 1.26+ required (see go.mod).
 
 ```bash
 make build        # Output: bin/magecli (version from git tags/commit)
